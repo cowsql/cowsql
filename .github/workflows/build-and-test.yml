@@ -31,7 +31,7 @@ jobs:
       env:
         CC: ${{ matrix.compiler }}
       run: |
-          git clone https://github.com/canonical/raft.git --depth 1
+          git clone https://github.com/cowsql/raft.git --depth 1
           cd raft
           autoreconf -i
           ./configure --enable-debug --enable-sanitize
