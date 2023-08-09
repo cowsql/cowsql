@@ -38,7 +38,7 @@ License
 The CowSQL library is released under a slightly modified version of LGPLv3, that
 includes a copyright exception allowing users to statically link the library
 code in their project and release the final work under their own terms. See the
-full [license](https://github.com/cowsql/cowsql/blob/master/LICENSE) text.
+full [license](./LICENSE) text.
 
 Compatibility
 -------------
