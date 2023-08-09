@@ -5,6 +5,12 @@ under the same license unless you state otherwise.
 All files Copyright (C) 2017-2019 Canonical Ltd. unless otherwise specified in
 the file.
 
+All files modifications after the 9th of August 2023 Copyright (C) 2023 Free
+Ekanayaka unless otherwise specified in the file.
+
+The list of authors and contributors can be retrieved from the git commit
+history and in some cases, the file headers.
+
 This software is licensed under the LGPLv3, included below.
 
 As a special exception to the GNU Lesser General Public License version 3
