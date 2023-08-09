@@ -1,5 +1,5 @@
 /**
- * Core dqlite server engine, calling out SQLite for serving client requests.
+ * Core cowsql server engine, calling out SQLite for serving client requests.
  */
 
 #ifndef COWSQL_GATEWAY_H_

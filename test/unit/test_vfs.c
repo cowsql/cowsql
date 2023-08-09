@@ -87,7 +87,7 @@ static void *setUp(const MunitParameter params[], void *user_data)
 
 	SETUP_HEAP;
 	SETUP_SQLITE;
-	rv = VfsInit(&f->vfs, "dqlite");
+	rv = VfsInit(&f->vfs, "cowsql");
 	munit_assert_int(rv, ==, 0);
 	f->dir = NULL;
 	const char *disk_mode_param = munit_parameters_get(params, "disk_mode");
@@ -207,7 +207,7 @@ static sqlite3 *__db_open(void)
 	int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
 	int rc;
 
-	rc = sqlite3_open_v2("test.db", &db, flags, "dqlite");
+	rc = sqlite3_open_v2("test.db", &db, flags, "cowsql");
 	munit_assert_int(rc, ==, SQLITE_OK);
 
 	__db_exec(db, "PRAGMA page_size=512");
@@ -1317,7 +1317,7 @@ TEST(VfsShmLock, releaseUnix, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* The dqlite VFS implementation allows to release a shared memory lock without
+/* The cowsql VFS implementation allows to release a shared memory lock without
  * acquiring it first. This is important because at open time sometimes SQLite
  * will do just that (release before acquire). */
 TEST(VfsShmLock, release, setUp, tearDown, 0, vfs_params)
@@ -1471,7 +1471,7 @@ TEST(VfsInit, oom, setUp, tearDown, 0, test_create_oom_params)
 
 	test_heap_fault_enable();
 
-	rv = VfsInit(&vfs, "dqlite");
+	rv = VfsInit(&vfs, "cowsql");
 	munit_assert_int(rv, ==, COWSQL_NOMEM);
 
 	return MUNIT_OK;

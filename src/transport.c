@@ -82,7 +82,7 @@ static void connect_work_cb(uv_work_t *work)
 		goto err;
 	}
 
-	/* Send the initial dqlite protocol handshake. */
+	/* Send the initial cowsql protocol handshake. */
 	protocol = ByteFlipLe64(COWSQL_PROTOCOL_VERSION);
 	rv = (int)write(r->fd, &protocol, sizeof protocol);
 	if (rv != sizeof protocol) {
@@ -91,7 +91,7 @@ static void connect_work_cb(uv_work_t *work)
 		goto err_after_connect;
 	}
 
-	/* Send a CONNECT dqlite protocol command, which will transfer control
+	/* Send a CONNECT cowsql protocol command, which will transfer control
 	 * to the underlying raft UV backend. */
 	request.id = i->id;
 	request.address = i->address;

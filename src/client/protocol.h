@@ -1,4 +1,4 @@
-/* Core dqlite client logic for encoding requests and decoding responses. */
+/* Core cowsql client logic for encoding requests and decoding responses. */
 
 #ifndef COWSQL_CLIENT_PROTOCOL_H_
 #define COWSQL_CLIENT_PROTOCOL_H_
@@ -201,7 +201,7 @@ COWSQL_VISIBLE_TO_TESTS int clientSendFinalize(struct client_proto *c,
 					       uint32_t stmt_id,
 					       struct client_context *context);
 
-/* Send a request to add a dqlite node. */
+/* Send a request to add a cowsql node. */
 COWSQL_VISIBLE_TO_TESTS int clientSendAdd(struct client_proto *c,
 					  uint64_t id,
 					  const char *address,

@@ -1,5 +1,5 @@
 /**
- * Generate, set, and extract dqlite-generated request IDs.
+ * Generate, set, and extract cowsql-generated request IDs.
  *
  * A fresh ID is generated for each config or exec client request that
  * arrives at a gateway. These IDs are passed down into raft via the

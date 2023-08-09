@@ -1054,7 +1054,7 @@ static int handle_promote_or_assign(struct gateway *g, struct handle *req)
 	g->req = req;
 
 	rv = raft_assign(g->raft, &r->req, request.id,
-			 translateDqliteRole((int)role), raftChangeCb);
+			 translateCowsqlRole((int)role), raftChangeCb);
 	if (rv != 0) {
 		tracef("raft_assign failed %d", rv);
 		g->req = NULL;

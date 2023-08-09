@@ -173,7 +173,7 @@ static void leaderCheckpointApplyCb(struct raft_apply *req,
 	}
 }
 
-/* Attempt to perform a checkpoint on nodes running a version of dqlite that
+/* Attempt to perform a checkpoint on nodes running a version of cowsql that
  * doens't perform autonomous checkpoints. For recent nodes, the checkpoint
  * command will just be a no-op.
  * This function will run after the WAL might have been checkpointed during a

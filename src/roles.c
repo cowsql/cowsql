@@ -11,8 +11,8 @@
 /* Overview
  * --------
  *
- * This file implements automatic role management for dqlite servers. When
- * automatic role management is enabled, servers in a dqlite cluster will
+ * This file implements automatic role management for cowsql servers. When
+ * automatic role management is enabled, servers in a cowsql cluster will
  * autonomously (without client intervention) promote and demote each other
  * to maintain a specified number of voters and standbys, taking into account
  * the health, failure domain, and weight of each server.
@@ -56,7 +56,7 @@
  * - Should we retry when some step in the handover process fails? How, and
  *   how many times?
  * - Should we have dedicated code somewhere to (possibly) promote newly-
- *   joined nodes? go-dqlite does this, but I'm not convinced it's important,
+ *   joined nodes? go-cowsql does this, but I'm not convinced it's important,
  *   or that it should run on the server if we do decide we want it.
  */
 
@@ -66,7 +66,7 @@
 struct change_record
 {
 	raft_id id;
-	int role; /* dqlite role codes */
+	int role; /* cowsql role codes */
 	queue queue;
 };
 
@@ -201,7 +201,7 @@ static void startChange(struct cowsql_node *d)
 	}
 	change->data = d;
 	/* TODO request ID */
-	rv = raft_assign(&d->raft, change, id, translateDqliteRole(role),
+	rv = raft_assign(&d->raft, change, id, translateCowsqlRole(role),
 			 changeCb);
 	if (rv != 0) {
 		/* TODO */

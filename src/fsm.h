@@ -1,5 +1,5 @@
 /**
- * Dqlite Raft FSM
+ * Cowsql Raft FSM
  */
 
 #ifndef COWSQL_FSM_H_
@@ -11,7 +11,7 @@
 #include "registry.h"
 
 /**
- * Initialize the given SQLite replication interface with dqlite's raft based
+ * Initialize the given SQLite replication interface with cowsql's raft based
  * implementation.
  */
 int fsm__init(struct raft_fsm *fsm,
@@ -19,7 +19,7 @@ int fsm__init(struct raft_fsm *fsm,
 	      struct registry *registry);
 
 /**
- * Initialize the given SQLite replication interface with dqlite's on-disk
+ * Initialize the given SQLite replication interface with cowsql's on-disk
  * raft based implementation.
  */
 int fsm__init_disk(struct raft_fsm *fsm,

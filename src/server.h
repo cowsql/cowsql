@@ -17,7 +17,7 @@
 #define COWSQL_ERRMSG_BUF_SIZE 300
 
 /**
- * A single dqlite server instance.
+ * A single cowsql server instance.
  */
 struct cowsql_node
 {
@@ -30,7 +30,7 @@ struct cowsql_node
 	struct uv_loop_s loop;                   /* UV loop */
 	struct raft_uv_transport raft_transport; /* Raft libuv transport */
 	struct raft_io raft_io;                  /* libuv I/O */
-	struct raft_fsm raft_fsm;                /* dqlite FSM */
+	struct raft_fsm raft_fsm;                /* cowsql FSM */
 	sem_t ready;                             /* Server is ready */
 	sem_t stopped;                           /* Notify loop stopped */
 	sem_t handover_done;

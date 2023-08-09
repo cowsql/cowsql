@@ -41,14 +41,14 @@ void test_server_stop(struct test_server *s)
 	test_server_client_close(s, &s->client);
 
 	if (s->role_management) {
-		cowsql_node_handover(s->dqlite);
-		rv = cowsql_node_stop(s->dqlite);
+		cowsql_node_handover(s->cowsql);
+		rv = cowsql_node_stop(s->cowsql);
 	} else {
-		rv = cowsql_node_stop(s->dqlite);
+		rv = cowsql_node_stop(s->cowsql);
 	}
 	munit_assert_int(rv, ==, 0);
 
-	cowsql_node_destroy(s->dqlite);
+	cowsql_node_destroy(s->cowsql);
 }
 
 void test_server_tear_down(struct test_server *s)
@@ -61,23 +61,23 @@ void test_server_start(struct test_server *s, const MunitParameter params[])
 {
 	int rv;
 
-	rv = cowsql_node_create(s->id, s->address, s->dir, &s->dqlite);
+	rv = cowsql_node_create(s->id, s->address, s->dir, &s->cowsql);
 	munit_assert_int(rv, ==, 0);
 
-	rv = cowsql_node_set_bind_address(s->dqlite, s->address);
+	rv = cowsql_node_set_bind_address(s->cowsql, s->address);
 	munit_assert_int(rv, ==, 0);
 
-	rv = cowsql_node_set_connect_func(s->dqlite, endpointConnect, s);
+	rv = cowsql_node_set_connect_func(s->cowsql, endpointConnect, s);
 	munit_assert_int(rv, ==, 0);
 
-	rv = cowsql_node_set_network_latency_ms(s->dqlite, 10);
+	rv = cowsql_node_set_network_latency_ms(s->cowsql, 10);
 	munit_assert_int(rv, ==, 0);
 
 	const char *snapshot_threshold_param =
 	    munit_parameters_get(params, SNAPSHOT_THRESHOLD_PARAM);
 	if (snapshot_threshold_param != NULL) {
 		unsigned threshold = (unsigned)atoi(snapshot_threshold_param);
-		rv = cowsql_node_set_snapshot_params(s->dqlite, threshold,
+		rv = cowsql_node_set_snapshot_params(s->cowsql, threshold,
 						     threshold);
 		munit_assert_int(rv, ==, 0);
 	}
@@ -86,7 +86,7 @@ void test_server_start(struct test_server *s, const MunitParameter params[])
 	if (disk_mode_param != NULL) {
 		bool disk_mode = (bool)atoi(disk_mode_param);
 		if (disk_mode) {
-			rv = cowsql_node_enable_disk_mode(s->dqlite);
+			rv = cowsql_node_enable_disk_mode(s->cowsql);
 			munit_assert_int(rv, ==, 0);
 		}
 	}
@@ -95,7 +95,7 @@ void test_server_start(struct test_server *s, const MunitParameter params[])
 	    munit_parameters_get(params, "target_voters");
 	if (target_voters_param != NULL) {
 		int n = atoi(target_voters_param);
-		rv = cowsql_node_set_target_voters(s->dqlite, n);
+		rv = cowsql_node_set_target_voters(s->cowsql, n);
 		munit_assert_int(rv, ==, 0);
 	}
 
@@ -103,7 +103,7 @@ void test_server_start(struct test_server *s, const MunitParameter params[])
 	    munit_parameters_get(params, "target_standbys");
 	if (target_standbys_param != NULL) {
 		int n = atoi(target_standbys_param);
-		rv = cowsql_node_set_target_standbys(s->dqlite, n);
+		rv = cowsql_node_set_target_standbys(s->cowsql, n);
 		munit_assert_int(rv, ==, 0);
 	}
 
@@ -113,12 +113,12 @@ void test_server_start(struct test_server *s, const MunitParameter params[])
 		bool role_management = (bool)atoi(role_management_param);
 		s->role_management = role_management;
 		if (role_management) {
-			rv = cowsql_node_enable_role_management(s->dqlite);
+			rv = cowsql_node_enable_role_management(s->cowsql);
 			munit_assert_int(rv, ==, 0);
 		}
 	}
 
-	rv = cowsql_node_start(s->dqlite);
+	rv = cowsql_node_start(s->cowsql);
 	munit_assert_int(rv, ==, 0);
 
 	test_server_client_connect(s, &s->client);

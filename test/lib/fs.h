@@ -1,7 +1,7 @@
 #ifndef COWSQL_TEST_FS_H
 #define COWSQL_TEST_FS_H
 
-#define TEST__DIR_TEMPLATE "/tmp/dqlite-test-XXXXXX"
+#define TEST__DIR_TEMPLATE "/tmp/cowsql-test-XXXXXX"
 
 /* Setup a temporary directory. */
 char *test_dir_setup(void);

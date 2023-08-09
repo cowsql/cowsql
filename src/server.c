@@ -84,7 +84,7 @@ int cowsql__init(struct cowsql_node *d,
 		goto err_after_raft_io_init;
 	}
 
-	/* TODO: properly handle closing the dqlite server without running it */
+	/* TODO: properly handle closing the cowsql server without running it */
 	rv = raft_init(&d->raft, &d->raft_io, &d->raft_fsm, d->config.id,
 		       d->config.address);
 	if (rv != 0) {
@@ -789,7 +789,7 @@ void cowsql_node_destroy(cowsql_node *d)
 	sqlite3_free(d);
 }
 
-/* Wait until a dqlite server is ready and can handle connections.
+/* Wait until a cowsql server is ready and can handle connections.
 **
 ** Returns true if the server has been successfully started, false otherwise.
 **
@@ -803,7 +803,7 @@ static bool taskReady(struct cowsql_node *d)
 	return d->running;
 }
 
-static int dqliteDatabaseDirSetup(cowsql_node *t)
+static int cowsqlDatabaseDirSetup(cowsql_node *t)
 {
 	int rv;
 	if (!t->config.disk) {
@@ -831,11 +831,11 @@ static int dqliteDatabaseDirSetup(cowsql_node *t)
 int cowsql_node_start(cowsql_node *t)
 {
 	int rv;
-	tracef("dqlite node start");
+	tracef("cowsql node start");
 
-	dqliteTracingMaybeEnable(true);
+	cowsqlTracingMaybeEnable(true);
 
-	rv = dqliteDatabaseDirSetup(t);
+	rv = cowsqlDatabaseDirSetup(t);
 	if (rv != 0) {
 		tracef("database dir setup failed %s", t->errmsg);
 		goto err;
@@ -880,7 +880,7 @@ int cowsql_node_handover(cowsql_node *d)
 
 int cowsql_node_stop(cowsql_node *d)
 {
-	tracef("dqlite node stop");
+	tracef("cowsql node stop");
 	void *result;
 	int rv;
 
@@ -897,7 +897,7 @@ int cowsql_node_recover(cowsql_node *n,
 			struct cowsql_node_info infos[],
 			int n_info)
 {
-	tracef("dqlite node recover");
+	tracef("cowsql node recover");
 	int i;
 	int ret;
 
@@ -954,7 +954,7 @@ int cowsql_node_recover_ext(cowsql_node *n,
 			    struct cowsql_node_info_ext infos[],
 			    int n_info)
 {
-	tracef("dqlite node recover ext");
+	tracef("cowsql node recover ext");
 	struct raft_configuration configuration;
 	int i;
 	int rv;
@@ -966,7 +966,7 @@ int cowsql_node_recover_ext(cowsql_node *n,
 			rv = COWSQL_MISUSE;
 			goto out;
 		}
-		int raft_role = translateDqliteRole((int)info->cowsql_role);
+		int raft_role = translateCowsqlRole((int)info->cowsql_role);
 		const char *address =
 		    UINT64_TO_PTR(info->address, const char *);
 		rv = raft_configuration_add(&configuration, info->id, address,

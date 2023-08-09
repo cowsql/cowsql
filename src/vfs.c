@@ -642,7 +642,7 @@ struct vfsFile
 	sqlite3_file *db;             /* For on-disk DB files, actual VFS. */
 };
 
-/* Custom dqlite VFS. Contains pointers to all databases that were created. */
+/* Custom cowsql VFS. Contains pointers to all databases that were created. */
 struct vfs
 {
 	struct vfsDatabase **databases; /* Database objects */
@@ -1151,7 +1151,7 @@ static size_t vfsDatabaseFileSize(struct vfsDatabase *d)
 		size =
 		    (uint64_t)d->n_pages * (uint64_t)vfsDatabaseGetPageSize(d);
 	}
-	/* TODO dqlite is limited to a max database size of SIZE_MAX */
+	/* TODO cowsql is limited to a max database size of SIZE_MAX */
 	assert(size <= SIZE_MAX);
 	return (size_t)size;
 }
@@ -1167,7 +1167,7 @@ static size_t vfsWalFileSize(struct vfsWal *w)
 		size += (uint64_t)w->n_frames *
 			(uint64_t)(FORMAT__WAL_FRAME_HDR_SIZE + page_size);
 	}
-	/* TODO dqlite is limited to a max database size of SIZE_MAX */
+	/* TODO cowsql is limited to a max database size of SIZE_MAX */
 	assert(size <= SIZE_MAX);
 	return (size_t)size;
 }
@@ -2317,7 +2317,7 @@ static void vfsWalStartHeader(struct vfsWal *w, uint32_t page_size)
 	 * bit to match the host's native byte order, so checksums are a bit
 	 * more efficient.
 	 *
-	 * In Dqlite the WAL file image is always generated at run time on the
+	 * In Cowsql the WAL file image is always generated at run time on the
 	 * host, so we can always use the native byte order. */
 	BytePutBe32(VFS__WAL_MAGIC | VFS__BIGENDIAN, &w->hdr[0]);
 	BytePutBe32(VFS__WAL_VERSION, &w->hdr[4]);
@@ -3034,7 +3034,7 @@ static int vfsDiskFileControlPragma(struct vfsFile *f, char **fnctl)
 	if (strcmp(left, "page_size") == 0 && right) {
 		int page_size = atoi(right);
 		/* The first page_size pragma sets page_size member of the db
-		 * and is called by dqlite based on the page_size configuration.
+		 * and is called by cowsql based on the page_size configuration.
 		 * Only used for on-disk databases.
 		 * */
 		if (f->db == NULL) {
@@ -3353,7 +3353,7 @@ static int vfsDiskAccess(sqlite3_vfs *vfs,
 	} else if (vfsFilenameEndsWith(filename, "-wal")) {
 		*result = 1;
 	} else {
-		/* dqlite database object exists, now check if the regular
+		/* cowsql database object exists, now check if the regular
 		 * SQLite file exists. */
 		return v->base_vfs->xAccess(vfs, filename, flags, result);
 	}

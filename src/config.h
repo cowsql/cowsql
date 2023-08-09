@@ -4,7 +4,7 @@
 #include "logger.h"
 
 /**
- * Value object holding dqlite configuration.
+ * Value object holding cowsql configuration.
  */
 struct config
 {

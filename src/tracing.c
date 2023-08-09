@@ -4,11 +4,11 @@
 
 #define LIBCOWSQL_TRACE "LIBCOWSQL_TRACE"
 
-bool _dqliteTracingEnabled = false;
+bool _cowsqlTracingEnabled = false;
 
-void dqliteTracingMaybeEnable(bool enable)
+void cowsqlTracingMaybeEnable(bool enable)
 {
 	if (getenv(LIBCOWSQL_TRACE) != NULL) {
-		_dqliteTracingEnabled = enable;
+		_cowsqlTracingEnabled = enable;
 	}
 }

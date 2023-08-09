@@ -20,7 +20,7 @@ struct test_server
 	unsigned id;         /* Server ID. */
 	char address[8];     /* Server address. */
 	char *dir;           /* Data directory. */
-	cowsql_node *dqlite; /* Dqlite instance. */
+	cowsql_node *cowsql; /* Cowsql instance. */
 	bool role_management;
 	struct client_proto client;    /* Connected client. */
 	struct test_server *others[5]; /* Other servers, by ID-1. */

@@ -5,13 +5,13 @@
 
 #include "config.h"
 
-/* Initialize the given SQLite VFS interface with dqlite's custom
+/* Initialize the given SQLite VFS interface with cowsql's custom
  * implementation. */
 int VfsInit(struct sqlite3_vfs *vfs, const char *name);
 
 int VfsEnableDisk(struct sqlite3_vfs *vfs);
 
-/* Release all memory associated with the given dqlite in-memory VFS
+/* Release all memory associated with the given cowsql in-memory VFS
  * implementation.
  *
  * This function also automatically unregister the implementation from the

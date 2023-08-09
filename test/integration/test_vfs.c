@@ -276,7 +276,7 @@ struct tx
 		munit_assert_int(_ckpt, ==, 0);                              \
 	} while (0)
 
-/* Perform a full checkpoint on a fresh connection, mimicking dqlite's
+/* Perform a full checkpoint on a fresh connection, mimicking cowsql's
  * checkpoint behavior. */
 #define CHECKPOINT_FRESH(VFS)    \
 	do {                     \
@@ -305,7 +305,7 @@ struct snapshot
 	size_t wal_size;
 };
 
-/* Copies n cowsql_buffers to a single dqlite buffer */
+/* Copies n cowsql_buffers to a single cowsql buffer */
 static struct cowsql_buffer n_bufs_to_buf(struct cowsql_buffer bufs[],
 					  unsigned n)
 {
@@ -436,7 +436,7 @@ static struct cowsql_buffer n_bufs_to_buf(struct cowsql_buffer bufs[],
 		munit_assert_int(_rv, ==, 0);                                \
 	} while (0)
 
-/* Open and close a new connection using the dqlite VFS. */
+/* Open and close a new connection using the cowsql VFS. */
 TEST(vfs, open, setUp, tearDown, 0, vfs_params)
 {
 	sqlite3 *db;
