@@ -1,7 +1,7 @@
 #include <raft.h>
 #include <raft/uv.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include "../lib/client.h"
 #include "../lib/config.h"

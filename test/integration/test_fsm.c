@@ -91,7 +91,7 @@ static void tearDown(void *data)
 TEST(fsm, snapshotFreshDb, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	int rv;
@@ -121,7 +121,7 @@ TEST(fsm, snapshotFreshDb, setUp, tearDown, 0, snapshot_params)
 TEST(fsm, snapshotWrittenDb, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	int rv;
@@ -163,7 +163,7 @@ TEST(fsm, snapshotWrittenDb, setUp, tearDown, 0, snapshot_params)
 TEST(fsm, snapshotHeapFaultSingleDB, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	int rv;
@@ -219,7 +219,7 @@ TEST(fsm,
      snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	int rv;
@@ -266,7 +266,7 @@ TEST(fsm,
 TEST(fsm, snapshotHeapFaultTwoDB, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	int rv;
@@ -334,7 +334,7 @@ TEST(fsm, snapshotHeapFaultTwoDB, setUp, tearDown, 0, snapshot_params)
 TEST(fsm, snapshotHeapFaultTwoDBAsync, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	int rv;
@@ -404,7 +404,7 @@ TEST(fsm, snapshotHeapFaultTwoDBAsync, setUp, tearDown, 0, snapshot_params)
 TEST(fsm, snapshotNewDbAddedBeforeFinalize, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	int rv;
@@ -458,7 +458,7 @@ TEST(fsm, snapshotNewDbAddedBeforeFinalize, setUp, tearDown, 0, snapshot_params)
 TEST(fsm, snapshotWritesBeforeFinalize, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	unsigned n_bufs = 0;
 	uint32_t stmt_id;
@@ -512,7 +512,7 @@ TEST(fsm, snapshotWritesBeforeFinalize, setUp, tearDown, 0, snapshot_params)
 TEST(fsm, concurrentSnapshots, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	struct raft_buffer *bufs2;
 	unsigned n_bufs = 0;
@@ -604,7 +604,7 @@ static MunitParameterEnum restore_params[] = {
 TEST(fsm, snapshotRestore, setUp, tearDown, 0, restore_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	struct raft_buffer snapshot;
 	long n_records =
@@ -675,7 +675,7 @@ TEST(fsm, snapshotRestore, setUp, tearDown, 0, restore_params)
 TEST(fsm, snapshotRestoreMultipleDBs, setUp, tearDown, 0, snapshot_params)
 {
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	struct raft_buffer *bufs;
 	struct raft_buffer snapshot;
 	unsigned n_bufs = 0;
@@ -746,7 +746,7 @@ TEST(fsm, snapshotRestoreMultipleDBs, setUp, tearDown, 0, snapshot_params)
 
 	/* Table after snapshot is not there on second DB */
 	PREPARE_FAIL("SELECT * from test2b", &stmt_id, &code, &msg);
-	munit_assert_uint64(code, ==, DQLITE_ERROR);
+	munit_assert_uint64(code, ==, COWSQL_ERROR);
 	munit_assert_string_equal(msg, "no such table: test2b");
 	free(msg);
 
@@ -773,7 +773,7 @@ TEST(fsm, applyFail, setUp, tearDown, 0, NULL)
 	struct command_frames c;
 	struct raft_buffer buf;
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	void *result = (void *)(uintptr_t)0xDEADBEEF;
 
 	/* Create a frames command without data. */
@@ -801,7 +801,7 @@ TEST(fsm, applyUnknownTypeFail, setUp, tearDown, 0, NULL)
 	struct command_frames c;
 	struct raft_buffer buf;
 	struct fixture *f = data;
-	struct raft_fsm *fsm = &f->servers[0].dqlite->raft_fsm;
+	struct raft_fsm *fsm = &f->servers[0].cowsql->raft_fsm;
 	void *result = (void *)(uintptr_t)0xDEADBEEF;
 
 	/* Create a frames command without data. */
@@ -819,7 +819,7 @@ TEST(fsm, applyUnknownTypeFail, setUp, tearDown, 0, NULL)
 
 	/* Apply the command and expect it to fail. */
 	rv = fsm->apply(fsm, &buf, &result);
-	munit_assert_int(rv, ==, DQLITE_PROTO);
+	munit_assert_int(rv, ==, COWSQL_PROTO);
 	munit_assert_ptr_null(result);
 
 	raft_free(buf.base);

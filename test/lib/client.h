@@ -1,4 +1,4 @@
-/* Setup a test dqlite client. */
+/* Setup a test cowsql client. */
 
 #include "endpoint.h"
 

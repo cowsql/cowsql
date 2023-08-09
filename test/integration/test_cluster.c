@@ -152,7 +152,7 @@ TEST(cluster, dataOnNewNode, setUp, tearDown, 0, cluster_params)
 	/* Add a second voting server, this one will receive all data from the
 	 * original leader. */
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 
 	/* Remove original server so second server becomes leader after election
 	 * timeout */
@@ -233,7 +233,7 @@ TEST(cluster, modifyingQuery, setUp, tearDown, 0, cluster_params)
 	}
 
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 
 	REMOVE(1);
 	sleep(1);
@@ -275,7 +275,7 @@ TEST(cluster, modifyingQuerySql, setUp, tearDown, 0, cluster_params)
 	}
 
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 
 	REMOVE(1);
 	sleep(1);

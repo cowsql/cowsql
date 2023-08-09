@@ -1,5 +1,5 @@
 /**
- * Generate, set, and extract dqlite-generated request IDs.
+ * Generate, set, and extract cowsql-generated request IDs.
  *
  * A fresh ID is generated for each config or exec client request that
  * arrives at a gateway. These IDs are passed down into raft via the
@@ -7,8 +7,8 @@
  * only.
  */
 
-#ifndef DQLITE_ID_H_
-#define DQLITE_ID_H_
+#ifndef COWSQL_ID_H_
+#define COWSQL_ID_H_
 
 #include <stdint.h>
 
@@ -43,4 +43,4 @@ uint64_t idExtract(const uint8_t buf[16]);
  */
 void idSet(uint8_t buf[16], uint64_t id);
 
-#endif /* DQLITE_ID_H_ */
+#endif /* COWSQL_ID_H_ */

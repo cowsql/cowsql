@@ -6,7 +6,7 @@
 #include "leader.h"
 #include "protocol.h"
 
-/* Translate a raft error to a dqlite one. */
+/* Translate a raft error to a cowsql one. */
 int translateRaftErrCode(int code)
 {
 	switch (code) {
@@ -21,33 +21,33 @@ int translateRaftErrCode(int code)
 	}
 }
 
-/* Translate a dqlite role code to its raft equivalent. */
-int translateDqliteRole(int role)
+/* Translate a cowsql role code to its raft equivalent. */
+int translateCowsqlRole(int role)
 {
 	switch (role) {
-		case DQLITE_VOTER:
+		case COWSQL_VOTER:
 			return RAFT_VOTER;
-		case DQLITE_STANDBY:
+		case COWSQL_STANDBY:
 			return RAFT_STANDBY;
-		case DQLITE_SPARE:
+		case COWSQL_SPARE:
 			return RAFT_SPARE;
 		default:
 			/* For backward compat with clients that don't set a
 			 * role. */
-			return DQLITE_VOTER;
+			return COWSQL_VOTER;
 	}
 }
 
-/* Translate a raft role code to its dqlite equivalent. */
+/* Translate a raft role code to its cowsql equivalent. */
 int translateRaftRole(int role)
 {
 	switch (role) {
 		case RAFT_VOTER:
-			return DQLITE_VOTER;
+			return COWSQL_VOTER;
 		case RAFT_STANDBY:
-			return DQLITE_STANDBY;
+			return COWSQL_STANDBY;
 		case RAFT_SPARE:
-			return DQLITE_SPARE;
+			return COWSQL_SPARE;
 		default:
 			assert(0);
 			return -1;

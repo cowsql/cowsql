@@ -6,7 +6,7 @@
 #include "../lib/runner.h"
 #include "../lib/sqlite.h"
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include <sys/mman.h>
 
@@ -42,7 +42,7 @@ static void *setUp(const MunitParameter params[], void *user_data)
 	for (i = 0; i < N_VFS; i++) {
 		f->dirs[i] = NULL;
 		sprintf(f->names[i], "%u", i + 1);
-		rv = dqlite_vfs_init(&f->vfs[i], f->names[i]);
+		rv = cowsql_vfs_init(&f->vfs[i], f->names[i]);
 		munit_assert_int(rv, ==, 0);
 		const char *disk_mode_param =
 		    munit_parameters_get(params, "disk_mode");
@@ -50,7 +50,7 @@ static void *setUp(const MunitParameter params[], void *user_data)
 			bool disk_mode = (bool)atoi(disk_mode_param);
 			if (disk_mode) {
 				f->dirs[i] = test_dir_setup();
-				rv = dqlite_vfs_enable_disk(&f->vfs[i]);
+				rv = cowsql_vfs_enable_disk(&f->vfs[i]);
 				munit_assert_int(rv, ==, 0);
 			}
 		}
@@ -70,7 +70,7 @@ static void tearDown(void *data)
 	for (i = 0; i < N_VFS; i++) {
 		rv = sqlite3_vfs_unregister(&f->vfs[i]);
 		munit_assert_int(rv, ==, 0);
-		dqlite_vfs_close(&f->vfs[i]);
+		cowsql_vfs_close(&f->vfs[i]);
 		test_dir_tear_down(f->dirs[i]);
 	}
 
@@ -204,21 +204,21 @@ struct tx
 #define POLL(VFS, TX)                                                      \
 	do {                                                               \
 		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);                  \
-		dqlite_vfs_frame *_frames;                                 \
+		cowsql_vfs_frame *_frames;                                 \
 		unsigned _i;                                               \
 		int _rv;                                                   \
 		memset(&TX, 0, sizeof TX);                                 \
 		char path[VFS_PATH_SZ];                                    \
 		struct fixture *f = data;                                  \
 		vfsFillDbPath(f, VFS, "test.db", path);                    \
-		_rv = dqlite_vfs_poll(vfs, path, &_frames, &TX.n);         \
+		_rv = cowsql_vfs_poll(vfs, path, &_frames, &TX.n);         \
 		munit_assert_int(_rv, ==, 0);                              \
 		if (_frames != NULL) {                                     \
 			TX.page_numbers =                                  \
 			    munit_malloc(sizeof *TX.page_numbers * TX.n);  \
 			TX.frames = munit_malloc(PAGE_SIZE * TX.n);        \
 			for (_i = 0; _i < TX.n; _i++) {                    \
-				dqlite_vfs_frame *_frame = &_frames[_i];   \
+				cowsql_vfs_frame *_frame = &_frames[_i];   \
 				TX.page_numbers[_i] = _frame->page_number; \
 				memcpy(TX.frames + _i * PAGE_SIZE,         \
 				       _frame->data, PAGE_SIZE);           \
@@ -236,7 +236,7 @@ struct tx
 		char path[VFS_PATH_SZ];                                  \
 		struct fixture *f = data;                                \
 		vfsFillDbPath(f, VFS, "test.db", path);                  \
-		_rv = dqlite_vfs_apply(vfs, path, TX.n, TX.page_numbers, \
+		_rv = cowsql_vfs_apply(vfs, path, TX.n, TX.page_numbers, \
 				       TX.frames);                       \
 		munit_assert_int(_rv, ==, 0);                            \
 	} while (0)
@@ -249,7 +249,7 @@ struct tx
 		char path[VFS_PATH_SZ];                   \
 		struct fixture *f = data;                 \
 		vfsFillDbPath(f, VFS, "test.db", path);   \
-		_rv = dqlite_vfs_abort(vfs, path);        \
+		_rv = cowsql_vfs_abort(vfs, path);        \
 		munit_assert_int(_rv, ==, 0);             \
 	} while (0)
 
@@ -276,7 +276,7 @@ struct tx
 		munit_assert_int(_ckpt, ==, 0);                              \
 	} while (0)
 
-/* Perform a full checkpoint on a fresh connection, mimicking dqlite's
+/* Perform a full checkpoint on a fresh connection, mimicking cowsql's
  * checkpoint behavior. */
 #define CHECKPOINT_FRESH(VFS)    \
 	do {                     \
@@ -305,12 +305,12 @@ struct snapshot
 	size_t wal_size;
 };
 
-/* Copies n dqlite_buffers to a single dqlite buffer */
-static struct dqlite_buffer n_bufs_to_buf(struct dqlite_buffer bufs[],
+/* Copies n cowsql_buffers to a single cowsql buffer */
+static struct cowsql_buffer n_bufs_to_buf(struct cowsql_buffer bufs[],
 					  unsigned n)
 {
 	uint8_t *cursor;
-	struct dqlite_buffer buf = {0};
+	struct cowsql_buffer buf = {0};
 
 	/* Allocate a suitable buffer */
 	for (unsigned i = 0; i < n; ++i) {
@@ -337,14 +337,14 @@ static struct dqlite_buffer n_bufs_to_buf(struct dqlite_buffer bufs[],
 		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);             \
 		int _rv;                                              \
 		unsigned _n;                                          \
-		struct dqlite_buffer *_bufs;                          \
-		struct dqlite_buffer _all_data;                       \
+		struct cowsql_buffer *_bufs;                          \
+		struct cowsql_buffer _all_data;                       \
 		_n = 2;                                               \
 		_bufs = sqlite3_malloc64(_n * sizeof(*_bufs));        \
 		char path[VFS_PATH_SZ];                               \
 		struct fixture *f = data;                             \
 		vfsFillDbPath(f, VFS, "test.db", path);               \
-		_rv = dqlite_vfs_snapshot_disk(vfs, path, _bufs, _n); \
+		_rv = cowsql_vfs_snapshot_disk(vfs, path, _bufs, _n); \
 		munit_assert_int(_rv, ==, 0);                         \
 		_all_data = n_bufs_to_buf(_bufs, _n);                 \
 		/* Free WAL buffer after copy. */                     \
@@ -362,7 +362,7 @@ static struct dqlite_buffer n_bufs_to_buf(struct dqlite_buffer bufs[],
 	do {                                                              \
 		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);                 \
 		int _rv;                                                  \
-		_rv = dqlite_vfs_snapshot(vfs, "test.db", &SNAPSHOT.data, \
+		_rv = cowsql_vfs_snapshot(vfs, "test.db", &SNAPSHOT.data, \
 					  &SNAPSHOT.n);                   \
 		munit_assert_int(_rv, ==, 0);                             \
 	} while (0)
@@ -374,13 +374,13 @@ static struct dqlite_buffer n_bufs_to_buf(struct dqlite_buffer bufs[],
 		int _rv;                                                      \
 		unsigned _n;                                                  \
 		unsigned _n_pages;                                            \
-		struct dqlite_buffer *_bufs;                                  \
-		struct dqlite_buffer _all_data;                               \
-		_rv = dqlite_vfs_num_pages(vfs, "test.db", &_n_pages);        \
+		struct cowsql_buffer *_bufs;                                  \
+		struct cowsql_buffer _all_data;                               \
+		_rv = cowsql_vfs_num_pages(vfs, "test.db", &_n_pages);        \
 		munit_assert_int(_rv, ==, 0);                                 \
 		_n = _n_pages + 1; /* + 1 for WAL */                          \
 		_bufs = sqlite3_malloc64(_n * sizeof(*_bufs));                \
-		_rv = dqlite_vfs_shallow_snapshot(vfs, "test.db", _bufs, _n); \
+		_rv = cowsql_vfs_shallow_snapshot(vfs, "test.db", _bufs, _n); \
 		munit_assert_int(_rv, ==, 0);                                 \
 		_all_data = n_bufs_to_buf(_bufs, _n);                         \
 		/* Free WAL buffer after copy. */                             \
@@ -426,17 +426,17 @@ static struct dqlite_buffer n_bufs_to_buf(struct dqlite_buffer bufs[],
 		struct fixture *f = data;                                    \
 		vfsFillDbPath(f, VFS, "test.db", path);                      \
 		if (_disk_mode) {                                            \
-			_rv = dqlite_vfs_restore_disk(                       \
+			_rv = cowsql_vfs_restore_disk(                       \
 			    vfs, path, SNAPSHOT.data, SNAPSHOT.main_size,    \
 			    SNAPSHOT.wal_size);                              \
 		} else {                                                     \
-			_rv = dqlite_vfs_restore(vfs, path, SNAPSHOT.data,   \
+			_rv = cowsql_vfs_restore(vfs, path, SNAPSHOT.data,   \
 						 SNAPSHOT.n);                \
 		}                                                            \
 		munit_assert_int(_rv, ==, 0);                                \
 	} while (0)
 
-/* Open and close a new connection using the dqlite VFS. */
+/* Open and close a new connection using the cowsql VFS. */
 TEST(vfs, open, setUp, tearDown, 0, vfs_params)
 {
 	sqlite3 *db;
@@ -469,7 +469,7 @@ TEST(vfs, writeTransactionNotImmediatelyVisible, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Invoking dqlite_vfs_poll() after a call to sqlite3_step() has triggered a
+/* Invoking cowsql_vfs_poll() after a call to sqlite3_step() has triggered a
  * write transaction returns the newly appended WAL frames. */
 TEST(vfs, pollAfterWriteTransaction, setUp, tearDown, 0, vfs_params)
 {
@@ -499,7 +499,7 @@ TEST(vfs, pollAfterWriteTransaction, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Invoking dqlite_vfs_poll() after a call to sqlite3_step() has triggered a
+/* Invoking cowsql_vfs_poll() after a call to sqlite3_step() has triggered a
  * write transaction sets a write lock on the WAL, so calls to sqlite3_step()
  * from other connections return SQLITE_BUSY if they try to start a write
  * transaction. */
@@ -537,7 +537,7 @@ TEST(vfs, pollAcquireWriteLock, setUp, tearDown, 0, vfs_params)
 /* If the page cache limit is exceeded during a call to sqlite3_step() that has
  * triggered a write transaction, some WAL frames will be written and then
  * overwritten before the final commit. Only the final version of the frame is
- * included in the set returned by dqlite_vfs_poll(). */
+ * included in the set returned by cowsql_vfs_poll(). */
 TEST(vfs, pollAfterPageStress, setUp, tearDown, 0, vfs_params)
 {
 	sqlite3 *db;
@@ -650,7 +650,7 @@ TEST(vfs, adaptPendingByte, setUp, tearDownRestorePendingByte, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to actually modify the WAL after a write transaction
+/* Use cowsql_vfs_apply() to actually modify the WAL after a write transaction
  * was triggered by a call to sqlite3_step(), then perform a read transaction
  * and check that it can see the transaction changes. */
 TEST(vfs, applyMakesTransactionVisible, setUp, tearDown, 0, vfs_params)
@@ -676,7 +676,7 @@ TEST(vfs, applyMakesTransactionVisible, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to actually modify the WAL after a write transaction
+/* Use cowsql_vfs_apply() to actually modify the WAL after a write transaction
  * was triggered by an explicit "COMMIT" statement and check that changes are
  * visible. */
 TEST(vfs, applyExplicitTransaction, setUp, tearDown, 0, vfs_params)
@@ -717,7 +717,7 @@ TEST(vfs, applyExplicitTransaction, setUp, tearDown, 0, vfs_params)
 }
 
 /* Perform two consecutive full write transactions using sqlite3_step(),
- * dqlite_vfs_poll() and dqlite_vfs_apply(), then run a read transaction and
+ * cowsql_vfs_poll() and cowsql_vfs_apply(), then run a read transaction and
  * check that it can see all committed changes. */
 TEST(vfs, consecutiveWriteTransactions, setUp, tearDown, 0, vfs_params)
 {
@@ -795,7 +795,7 @@ TEST(vfs,
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to actually modify the WAL after a write transaction
+/* Use cowsql_vfs_apply() to actually modify the WAL after a write transaction
  * was triggered by sqlite3_step(), and verify that the transaction is visible
  * from another existing connection. */
 TEST(vfs,
@@ -829,7 +829,7 @@ TEST(vfs,
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to actually modify the WAL after a write transaction
+/* Use cowsql_vfs_apply() to actually modify the WAL after a write transaction
  * was triggered by sqlite3_step(), and verify that the transaction is visible
  * from a brand new connection. */
 TEST(vfs, transactionIsVisibleFromNewConnection, setUp, tearDown, 0, vfs_params)
@@ -859,7 +859,7 @@ TEST(vfs, transactionIsVisibleFromNewConnection, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to actually modify the WAL after a write transaction
+/* Use cowsql_vfs_apply() to actually modify the WAL after a write transaction
  * was triggered by sqlite3_step(), then close the connection and open a new
  * one. A read transaction started in the new connection can see the changes
  * committed by the first one. */
@@ -893,7 +893,7 @@ TEST(vfs,
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to replicate the very first write transaction on a
+/* Use cowsql_vfs_apply() to replicate the very first write transaction on a
  * different VFS than the one that initially generated it. In that case it's
  * necessary to initialize the database file on the other VFS by opening and
  * closing a connection. */
@@ -925,9 +925,9 @@ TEST(vfs, firstApplyOnDifferentVfs, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to replicate a second write transaction on a different
+/* Use cowsql_vfs_apply() to replicate a second write transaction on a different
  * VFS than the one that initially generated it. In that case it's not necessary
- * to do anything special before calling dqlite_vfs_apply(). */
+ * to do anything special before calling cowsql_vfs_apply(). */
 TEST(vfs, secondApplyOnDifferentVfs, setUp, tearDown, 0, vfs_params)
 {
 	sqlite3 *db1;
@@ -960,7 +960,7 @@ TEST(vfs, secondApplyOnDifferentVfs, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Use dqlite_vfs_apply() to replicate a second write transaction on a different
+/* Use cowsql_vfs_apply() to replicate a second write transaction on a different
  * VFS than the one that initially generated it and that has an open connection
  * which has built the WAL index header by preparing a statement. */
 TEST(vfs, applyOnDifferentVfsWithOpenConnection, setUp, tearDown, 0, vfs_params)
@@ -1037,7 +1037,7 @@ TEST(vfs, transactionVisibleOnDifferentVfs, setUp, tearDown, 0, vfs_params)
 	return MUNIT_OK;
 }
 
-/* Calling dqlite_vfs_abort() to cancel a transaction releases the write
+/* Calling cowsql_vfs_abort() to cancel a transaction releases the write
  * lock on the WAL. */
 TEST(vfs, abort, setUp, tearDown, 0, vfs_params)
 {

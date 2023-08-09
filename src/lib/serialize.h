@@ -6,12 +6,12 @@
 
 #include <uv.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include "assert.h"
 #include "byte.h"
 
-#define DQLITE_PARSE 1005
+#define COWSQL_PARSE 1005
 
 /**
  * The size in bytes of a single serialized word.
@@ -113,90 +113,90 @@ struct cursor
 		return rc;                               \
 	}
 
-DQLITE_INLINE size_t uint8__sizeof(const uint8_t *value)
+COWSQL_INLINE size_t uint8__sizeof(const uint8_t *value)
 {
 	(void)value;
 	return sizeof(uint8_t);
 }
 
-DQLITE_INLINE size_t uint16__sizeof(const uint16_t *value)
+COWSQL_INLINE size_t uint16__sizeof(const uint16_t *value)
 {
 	(void)value;
 	return sizeof(uint16_t);
 }
 
-DQLITE_INLINE size_t uint32__sizeof(const uint32_t *value)
+COWSQL_INLINE size_t uint32__sizeof(const uint32_t *value)
 {
 	(void)value;
 	return sizeof(uint32_t);
 }
 
-DQLITE_INLINE size_t uint64__sizeof(const uint64_t *value)
+COWSQL_INLINE size_t uint64__sizeof(const uint64_t *value)
 {
 	(void)value;
 	return sizeof(uint64_t);
 }
 
-DQLITE_INLINE size_t int64__sizeof(const int64_t *value)
+COWSQL_INLINE size_t int64__sizeof(const int64_t *value)
 {
 	(void)value;
 	return sizeof(int64_t);
 }
 
-DQLITE_INLINE size_t float__sizeof(const float_t *value)
+COWSQL_INLINE size_t float__sizeof(const float_t *value)
 {
 	(void)value;
 	return sizeof(double);
 }
 
-DQLITE_INLINE size_t text__sizeof(const text_t *value)
+COWSQL_INLINE size_t text__sizeof(const text_t *value)
 {
 	return BytePad64(strlen(*value) + 1);
 }
 
-DQLITE_INLINE size_t blob__sizeof(const blob_t *value)
+COWSQL_INLINE size_t blob__sizeof(const blob_t *value)
 {
 	/* length + data */
 	return sizeof(uint64_t) + BytePad64(value->len);
 }
 
-DQLITE_INLINE void uint8__encode(const uint8_t *value, void **cursor)
+COWSQL_INLINE void uint8__encode(const uint8_t *value, void **cursor)
 {
 	*(uint8_t *)(*cursor) = *value;
 	*cursor += sizeof(uint8_t);
 }
 
-DQLITE_INLINE void uint16__encode(const uint16_t *value, void **cursor)
+COWSQL_INLINE void uint16__encode(const uint16_t *value, void **cursor)
 {
 	*(uint16_t *)(*cursor) = ByteFlipLe16(*value);
 	*cursor += sizeof(uint16_t);
 }
 
-DQLITE_INLINE void uint32__encode(const uint32_t *value, void **cursor)
+COWSQL_INLINE void uint32__encode(const uint32_t *value, void **cursor)
 {
 	*(uint32_t *)(*cursor) = ByteFlipLe32(*value);
 	*cursor += sizeof(uint32_t);
 }
 
-DQLITE_INLINE void uint64__encode(const uint64_t *value, void **cursor)
+COWSQL_INLINE void uint64__encode(const uint64_t *value, void **cursor)
 {
 	*(uint64_t *)(*cursor) = ByteFlipLe64(*value);
 	*cursor += sizeof(uint64_t);
 }
 
-DQLITE_INLINE void int64__encode(const int64_t *value, void **cursor)
+COWSQL_INLINE void int64__encode(const int64_t *value, void **cursor)
 {
 	*(int64_t *)(*cursor) = (int64_t)ByteFlipLe64((uint64_t)*value);
 	*cursor += sizeof(int64_t);
 }
 
-DQLITE_INLINE void float__encode(const float_t *value, void **cursor)
+COWSQL_INLINE void float__encode(const float_t *value, void **cursor)
 {
 	*(uint64_t *)(*cursor) = ByteFlipLe64(*(uint64_t *)value);
 	*cursor += sizeof(uint64_t);
 }
 
-DQLITE_INLINE void text__encode(const text_t *value, void **cursor)
+COWSQL_INLINE void text__encode(const text_t *value, void **cursor)
 {
 	size_t len = BytePad64(strlen(*value) + 1);
 	memset(*cursor, 0, len);
@@ -204,7 +204,7 @@ DQLITE_INLINE void text__encode(const text_t *value, void **cursor)
 	*cursor += len;
 }
 
-DQLITE_INLINE void blob__encode(const blob_t *value, void **cursor)
+COWSQL_INLINE void blob__encode(const blob_t *value, void **cursor)
 {
 	size_t len = BytePad64(value->len);
 	uint64_t value_len = value->len;
@@ -213,11 +213,11 @@ DQLITE_INLINE void blob__encode(const blob_t *value, void **cursor)
 	*cursor += len;
 }
 
-DQLITE_INLINE int uint8__decode(struct cursor *cursor, uint8_t *value)
+COWSQL_INLINE int uint8__decode(struct cursor *cursor, uint8_t *value)
 {
 	size_t n = sizeof(uint8_t);
 	if (n > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	*value = *(uint8_t *)cursor->p;
 	cursor->p += n;
@@ -225,11 +225,11 @@ DQLITE_INLINE int uint8__decode(struct cursor *cursor, uint8_t *value)
 	return 0;
 }
 
-DQLITE_INLINE int uint16__decode(struct cursor *cursor, uint16_t *value)
+COWSQL_INLINE int uint16__decode(struct cursor *cursor, uint16_t *value)
 {
 	size_t n = sizeof(uint16_t);
 	if (n > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	*value = ByteFlipLe16(*(uint16_t *)cursor->p);
 	cursor->p += n;
@@ -237,11 +237,11 @@ DQLITE_INLINE int uint16__decode(struct cursor *cursor, uint16_t *value)
 	return 0;
 }
 
-DQLITE_INLINE int uint32__decode(struct cursor *cursor, uint32_t *value)
+COWSQL_INLINE int uint32__decode(struct cursor *cursor, uint32_t *value)
 {
 	size_t n = sizeof(uint32_t);
 	if (n > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	*value = ByteFlipLe32(*(uint32_t *)cursor->p);
 	cursor->p += n;
@@ -249,11 +249,11 @@ DQLITE_INLINE int uint32__decode(struct cursor *cursor, uint32_t *value)
 	return 0;
 }
 
-DQLITE_INLINE int uint64__decode(struct cursor *cursor, uint64_t *value)
+COWSQL_INLINE int uint64__decode(struct cursor *cursor, uint64_t *value)
 {
 	size_t n = sizeof(uint64_t);
 	if (n > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	*value = ByteFlipLe64(*(uint64_t *)cursor->p);
 	cursor->p += n;
@@ -261,11 +261,11 @@ DQLITE_INLINE int uint64__decode(struct cursor *cursor, uint64_t *value)
 	return 0;
 }
 
-DQLITE_INLINE int int64__decode(struct cursor *cursor, int64_t *value)
+COWSQL_INLINE int int64__decode(struct cursor *cursor, int64_t *value)
 {
 	size_t n = sizeof(int64_t);
 	if (n > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	*value = (int64_t)ByteFlipLe64((uint64_t) * (int64_t *)cursor->p);
 	cursor->p += n;
@@ -273,11 +273,11 @@ DQLITE_INLINE int int64__decode(struct cursor *cursor, int64_t *value)
 	return 0;
 }
 
-DQLITE_INLINE int float__decode(struct cursor *cursor, float_t *value)
+COWSQL_INLINE int float__decode(struct cursor *cursor, float_t *value)
 {
 	size_t n = sizeof(double);
 	if (n > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	*(uint64_t *)value = ByteFlipLe64(*(uint64_t *)cursor->p);
 	cursor->p += n;
@@ -285,13 +285,13 @@ DQLITE_INLINE int float__decode(struct cursor *cursor, float_t *value)
 	return 0;
 }
 
-DQLITE_INLINE int text__decode(struct cursor *cursor, text_t *value)
+COWSQL_INLINE int text__decode(struct cursor *cursor, text_t *value)
 {
 	/* Find the terminating null byte of the next string, if any. */
 	size_t len = strnlen(cursor->p, cursor->cap);
 	size_t n;
 	if (len == cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	*value = cursor->p;
 	n = BytePad64(strlen(*value) + 1);
@@ -300,7 +300,7 @@ DQLITE_INLINE int text__decode(struct cursor *cursor, text_t *value)
 	return 0;
 }
 
-DQLITE_INLINE int blob__decode(struct cursor *cursor, blob_t *value)
+COWSQL_INLINE int blob__decode(struct cursor *cursor, blob_t *value)
 {
 	uint64_t len;
 	size_t n;
@@ -311,7 +311,7 @@ DQLITE_INLINE int blob__decode(struct cursor *cursor, blob_t *value)
 	}
 	n = BytePad64((size_t)len);
 	if (n > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 	value->base = (char *)cursor->p;
 	value->len = (size_t)len;

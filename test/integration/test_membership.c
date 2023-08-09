@@ -98,7 +98,7 @@ TEST(membership, join, setUp, tearDown, 0, membership_params)
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
@@ -126,7 +126,7 @@ struct id_last_applied
 
 static bool last_applied_cond(struct id_last_applied arg)
 {
-	return arg.f->servers[arg.id].dqlite->raft.last_applied >=
+	return arg.f->servers[arg.id].cowsql->raft.last_applied >=
 	       arg.last_applied;
 }
 
@@ -144,7 +144,7 @@ TEST(membership, transfer, setUp, tearDown, 0, membership_params)
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
@@ -157,7 +157,7 @@ TEST(membership, transfer, setUp, tearDown, 0, membership_params)
 	HANDSHAKE_C(&c_transfer);
 	TRANSFER(2, &c_transfer);
 	test_server_client_close(&f->servers[0], &c_transfer);
-	last_applied = f->servers[0].dqlite->raft.last_applied;
+	last_applied = f->servers[0].cowsql->raft.last_applied;
 
 	SELECT(2);
 	HANDSHAKE;
@@ -193,7 +193,7 @@ TEST(membership,
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
@@ -213,7 +213,7 @@ TEST(membership,
 	HANDSHAKE_C(&c_transfer);
 	TRANSFER(2, &c_transfer);
 	test_server_client_close(&f->servers[0], &c_transfer);
-	last_applied = f->servers[0].dqlite->raft.last_applied;
+	last_applied = f->servers[0].cowsql->raft.last_applied;
 
 	SELECT(2);
 	HANDSHAKE;
@@ -237,7 +237,7 @@ struct fixture_id
 
 static bool transfer_started_cond(struct fixture_id arg)
 {
-	return arg.f->servers[arg.id].dqlite->raft.transfer != NULL;
+	return arg.f->servers[arg.id].cowsql->raft.transfer != NULL;
 }
 
 /* Transfer leadership away from a member and immediately try to EXEC a
@@ -256,7 +256,7 @@ TEST(membership, transferAndSqlExecWithBarrier, setUp, tearDown, 0, NULL)
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 
@@ -275,12 +275,12 @@ TEST(membership, transferAndSqlExecWithBarrier, setUp, tearDown, 0, NULL)
 
 	/* Force a barrier.
 	 * TODO this is hacky, but I can't seem to hit the codepath otherwise */
-	f->servers[0].dqlite->raft.last_applied = 0;
+	f->servers[0].cowsql->raft.last_applied = 0;
 
 	rv = clientSendExec(f->client, stmt_id, NULL, 0, NULL);
 	munit_assert_int(rv, ==, 0);
 	rv = clientRecvResult(f->client, &last_insert_id, &rows_affected, NULL);
-	munit_assert_int(rv, ==, DQLITE_CLIENT_PROTO_ERROR);
+	munit_assert_int(rv, ==, COWSQL_CLIENT_PROTO_ERROR);
 
 	test_server_client_close(&f->servers[1], &c_transfer);
 	return MUNIT_OK;
@@ -307,7 +307,7 @@ TEST(membership,
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
@@ -327,7 +327,7 @@ TEST(membership,
 	HANDSHAKE_C(&c_transfer);
 	TRANSFER(2, &c_transfer);
 	test_server_client_close(&f->servers[0], &c_transfer);
-	last_applied = f->servers[0].dqlite->raft.last_applied;
+	last_applied = f->servers[0].cowsql->raft.last_applied;
 
 	SELECT(2);
 	HANDSHAKE;
@@ -347,7 +347,7 @@ TEST(membership,
 	TRANSFER(1, &c_transfer);
 	test_server_client_close(&f->servers[1], &c_transfer);
 
-	last_applied = f->servers[1].dqlite->raft.last_applied;
+	last_applied = f->servers[1].cowsql->raft.last_applied;
 	test_server_client_reconnect(&f->servers[0], &f->servers[0].client);
 	SELECT(1);
 	HANDSHAKE;

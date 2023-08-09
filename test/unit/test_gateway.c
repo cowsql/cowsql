@@ -1,4 +1,4 @@
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 #include "../../src/gateway.h"
 #include "../../src/request.h"
 #include "../../src/response.h"
@@ -172,7 +172,7 @@ static void handleCb(struct handle *req,
 #define HANDLE_STATUS(TYPE, RC) HANDLE_SCHEMA_STATUS(TYPE, 0, RC)
 
 /* Handle a request of the given type and check that no error occurs. */
-#define HANDLE(TYPE) HANDLE_STATUS(DQLITE_REQUEST_##TYPE, 0)
+#define HANDLE(TYPE) HANDLE_STATUS(COWSQL_REQUEST_##TYPE, 0)
 
 /* Open a leader connection against the "test" database */
 #define OPEN                              \
@@ -291,7 +291,7 @@ static void handleCb(struct handle *req,
 #define ASSERT_CALLBACK(STATUS, UPPER)                                   \
 	munit_assert_true(f->context->invoked);                          \
 	munit_assert_int(f->context->status, ==, STATUS);                \
-	munit_assert_int(f->context->type, ==, DQLITE_RESPONSE_##UPPER); \
+	munit_assert_int(f->context->type, ==, COWSQL_RESPONSE_##UPPER); \
 	f->cursor->p = buffer__cursor(f->buf2, 0);                       \
 	f->cursor->cap = buffer__offset(f->buf2);                        \
 	buffer__reset(f->buf2);                                          \
@@ -573,7 +573,7 @@ TEST_CASE(prepare, barrier_error, NULL)
 	 * an allocation using raft_malloc. */
 	test_raft_heap_fault_config(0, 1);
 	test_raft_heap_fault_enable();
-	HANDLE_STATUS(DQLITE_REQUEST_PREPARE, RAFT_NOMEM);
+	HANDLE_STATUS(COWSQL_REQUEST_PREPARE, RAFT_NOMEM);
 	return MUNIT_OK;
 }
 
@@ -640,7 +640,7 @@ TEST_CASE(prepare, nonempty_tail_v1, NULL)
 	f->request.sql = "CREATE TABLE test (n INT); SELECT * FROM test";
 	CLUSTER_ELECT(0);
 	ENCODE(&f->request, prepare);
-	HANDLE_SCHEMA_STATUS(DQLITE_REQUEST_PREPARE, 1, 0);
+	HANDLE_SCHEMA_STATUS(COWSQL_REQUEST_PREPARE, 1, 0);
 	WAIT;
 	ASSERT_CALLBACK(0, STMT_WITH_OFFSET);
 	DECODE(&response, stmt_with_offset);
@@ -656,15 +656,15 @@ TEST_CASE(prepare, nonempty_tail_v1, NULL)
 	f->context->status = -1;
 	f->context->type = -1;
 	rc =
-	    gateway__handle(f->gateway, f->handle, DQLITE_REQUEST_EXEC,
-			    DQLITE_REQUEST_PARAMS_SCHEMA_V0, f->buf2, handleCb);
+	    gateway__handle(f->gateway, f->handle, COWSQL_REQUEST_EXEC,
+			    COWSQL_REQUEST_PARAMS_SCHEMA_V0, f->buf2, handleCb);
 	munit_assert_int(rc, ==, 0);
 	WAIT;
 	ASSERT_CALLBACK(0, RESULT);
 
 	f->request.sql += offset;
 	ENCODE(&f->request, prepare);
-	HANDLE_SCHEMA_STATUS(DQLITE_REQUEST_PREPARE, 1, 0);
+	HANDLE_SCHEMA_STATUS(COWSQL_REQUEST_PREPARE, 1, 0);
 	WAIT;
 	ASSERT_CALLBACK(0, STMT_WITH_OFFSET);
 	DECODE(&response, stmt_with_offset);
@@ -1108,7 +1108,7 @@ TEST_CASE(exec, restore, NULL)
 	munit_assert_int(value.type, ==, SQLITE_INTEGER);
 	munit_assert_int(value.integer, ==, 2);
 	DECODE(&response, rows);
-	munit_assert_ullong(response.eof, ==, DQLITE_RESPONSE_ROWS_DONE);
+	munit_assert_ullong(response.eof, ==, COWSQL_RESPONSE_ROWS_DONE);
 	return MUNIT_OK;
 }
 
@@ -1170,7 +1170,7 @@ TEST_CASE(exec, manyParams, NULL)
 	f->request.stmt_id = stmt_id;
 	ENCODE(&f->request, exec);
 	ENCODE_PARAMS(num_exec_params, values, TUPLE__PARAMS32);
-	HANDLE_SCHEMA_STATUS(DQLITE_REQUEST_EXEC, 1, 0);
+	HANDLE_SCHEMA_STATUS(COWSQL_REQUEST_EXEC, 1, 0);
 	WAIT;
 	ASSERT_CALLBACK(0, RESULT);
 
@@ -1250,7 +1250,7 @@ TEST_CASE(query, simple, NULL)
 	text__decode(f->cursor, &column);
 	munit_assert_string_equal(column, "n");
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_DONE);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_DONE);
 
 	return MUNIT_OK;
 }
@@ -1281,7 +1281,7 @@ TEST_CASE(query, one_row, NULL)
 	munit_assert_int(value.type, ==, SQLITE_INTEGER);
 	munit_assert_int(value.integer, ==, 666);
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_DONE);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_DONE);
 
 	return MUNIT_OK;
 }
@@ -1340,7 +1340,7 @@ TEST_CASE(query, large, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_PART);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_PART);
 
 	gateway__resume(f->gateway, &finished);
 	munit_assert_false(finished);
@@ -1360,7 +1360,7 @@ TEST_CASE(query, large, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_DONE);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_DONE);
 
 	gateway__resume(f->gateway, &finished);
 	munit_assert_true(finished);
@@ -1437,7 +1437,7 @@ TEST_CASE(query, interrupt, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_PART);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_PART);
 
 	ENCODE(&interrupt, interrupt);
 	HANDLE(INTERRUPT);
@@ -1500,7 +1500,7 @@ TEST_CASE(query, largeClose, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_PART);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_PART);
 
 	return MUNIT_OK;
 }
@@ -1625,7 +1625,7 @@ TEST_CASE(query, manyParams, NULL)
 	f->request.stmt_id = stmt_id;
 	ENCODE(&f->request, query);
 	ENCODE_PARAMS(num_query_params, values, TUPLE__PARAMS32);
-	HANDLE_SCHEMA_STATUS(DQLITE_REQUEST_QUERY, 1, 0);
+	HANDLE_SCHEMA_STATUS(COWSQL_REQUEST_QUERY, 1, 0);
 	WAIT;
 	ASSERT_CALLBACK(0, ROWS);
 
@@ -1829,7 +1829,7 @@ TEST_CASE(exec_sql, barrier_error, NULL)
 	 * an allocation using raft_malloc. */
 	test_raft_heap_fault_config(0, 1);
 	test_raft_heap_fault_enable();
-	HANDLE_STATUS(DQLITE_REQUEST_EXEC_SQL, RAFT_NOMEM);
+	HANDLE_STATUS(COWSQL_REQUEST_EXEC_SQL, RAFT_NOMEM);
 	return MUNIT_OK;
 }
 
@@ -1861,7 +1861,7 @@ TEST_CASE(exec_sql, manyParams, NULL)
 	f->request.sql = sql;
 	ENCODE(&f->request, exec_sql);
 	ENCODE_PARAMS(num_exec_params, values, TUPLE__PARAMS32);
-	HANDLE_SCHEMA_STATUS(DQLITE_REQUEST_EXEC_SQL, 1, 0);
+	HANDLE_SCHEMA_STATUS(COWSQL_REQUEST_EXEC_SQL, 1, 0);
 	WAIT;
 	ASSERT_CALLBACK(0, RESULT);
 
@@ -1999,7 +1999,7 @@ TEST_CASE(query_sql, large, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_PART);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_PART);
 
 	gateway__resume(f->gateway, &finished);
 	munit_assert_false(finished);
@@ -2019,7 +2019,7 @@ TEST_CASE(query_sql, large, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_DONE);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_DONE);
 
 	gateway__resume(f->gateway, &finished);
 	munit_assert_true(finished);
@@ -2066,7 +2066,7 @@ TEST_CASE(query_sql, largeClose, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_PART);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_PART);
 
 	return MUNIT_OK;
 }
@@ -2109,7 +2109,7 @@ TEST_CASE(query_sql, interrupt, NULL)
 	}
 
 	DECODE(&f->response, rows);
-	munit_assert_ullong(f->response.eof, ==, DQLITE_RESPONSE_ROWS_PART);
+	munit_assert_ullong(f->response.eof, ==, COWSQL_RESPONSE_ROWS_PART);
 
 	ENCODE(&interrupt, interrupt);
 	HANDLE(INTERRUPT);
@@ -2204,7 +2204,7 @@ TEST_CASE(query_sql, barrier_error, NULL)
 	 * an allocation using raft_malloc. */
 	test_raft_heap_fault_config(0, 1);
 	test_raft_heap_fault_enable();
-	HANDLE_STATUS(DQLITE_REQUEST_QUERY_SQL, RAFT_NOMEM);
+	HANDLE_STATUS(COWSQL_REQUEST_QUERY_SQL, RAFT_NOMEM);
 	return MUNIT_OK;
 }
 
@@ -2235,7 +2235,7 @@ TEST_CASE(query_sql, manyParams, NULL)
 	f->request.sql = sql;
 	ENCODE(&f->request, query_sql);
 	ENCODE_PARAMS(num_query_params, values, TUPLE__PARAMS32);
-	HANDLE_SCHEMA_STATUS(DQLITE_REQUEST_QUERY_SQL, 1, 0);
+	HANDLE_SCHEMA_STATUS(COWSQL_REQUEST_QUERY_SQL, 1, 0);
 	WAIT;
 	ASSERT_CALLBACK(0, ROWS);
 
@@ -2295,7 +2295,7 @@ TEST_CASE(request_cluster, unrecognizedFormat, NULL)
 	ENCODE(&f->request, cluster);
 	HANDLE(CLUSTER);
 	ASSERT_CALLBACK(0, FAILURE);
-	ASSERT_FAILURE(DQLITE_PARSE, "unrecognized cluster format");
+	ASSERT_FAILURE(COWSQL_PARSE, "unrecognized cluster format");
 	return MUNIT_OK;
 }
 
@@ -2335,6 +2335,6 @@ TEST_CASE(invalid, requestType, NULL)
 	ENCODE(&f->request, leader);
 	HANDLE_STATUS(123, 0);
 	ASSERT_CALLBACK(0, FAILURE);
-	ASSERT_FAILURE(DQLITE_PARSE, "unrecognized request type");
+	ASSERT_FAILURE(COWSQL_PARSE, "unrecognized request type");
 	return MUNIT_OK;
 }

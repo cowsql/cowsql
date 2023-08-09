@@ -3,7 +3,7 @@
  * APIs to decode parameters and bind them to SQLite statement, and to fetch
  * rows and encode them.
  *
- * The dqlite wire format for a list of parameters to be bound to a statement
+ * The cowsql wire format for a list of parameters to be bound to a statement
  * is divided in header and body. The format of the header is:
  *
  *  8 bits: Number of parameters to bind (min is 1, max is 255).
@@ -20,7 +20,7 @@
  * After the parameters header follows the parameters body, which contain one
  * value for each parameter to bind, following the normal encoding rules.
  *
- * The dqlite wire format for a set of query rows is divided in header and
+ * The cowsql wire format for a set of query rows is divided in header and
  * body. The format of the header is:
  *
  *  64 bits: Number of columns in the result set (min is 1).
@@ -38,12 +38,12 @@
  * This repeats until reaching a full 64-bit word. If there are more than 16 row
  * columns, the header will grow additional 64-bit words as needed, following
  * the same pattern. After this row preamble, the values of all columns of the
- * row follow, using the normal dqlite enconding conventions.
+ * row follow, using the normal cowsql enconding conventions.
  *
  *****************************************************************************/
 
-#ifndef DQLITE_STMT_H
-#define DQLITE_STMT_H
+#ifndef COWSQL_STMT_H
+#define COWSQL_STMT_H
 
 #include <sqlite3.h>
 
@@ -73,4 +73,4 @@ const char *stmt__hash(struct stmt *stmt);
 
 REGISTRY(stmt__registry, stmt);
 
-#endif /* DQLITE_STMT_H */
+#endif /* COWSQL_STMT_H */

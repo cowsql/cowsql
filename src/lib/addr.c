@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 int AddrParse(const char *input,
 	      struct sockaddr *addr,
@@ -28,12 +28,12 @@ int AddrParse(const char *input,
 		/* Unix domain address.
 		 * FIXME the use of the "abstract namespace" here is
 		 * Linux-specific */
-		if (!(flags & DQLITE_ADDR_PARSE_UNIX)) {
-			return DQLITE_MISUSE;
+		if (!(flags & COWSQL_ADDR_PARSE_UNIX)) {
+			return COWSQL_MISUSE;
 		}
 		addr_un = (struct sockaddr_un *)addr;
 		if (*addr_len < sizeof(*addr_un)) {
-			return DQLITE_ERROR;
+			return COWSQL_ERROR;
 		}
 		name = input + 1;
 		name_len = input_len - 1;
@@ -45,7 +45,7 @@ int AddrParse(const char *input,
 		}
 		/* Leading null byte, no trailing null byte */
 		if (name_len + 1 > sizeof(addr_un->sun_path)) {
-			return DQLITE_ERROR;
+			return COWSQL_ERROR;
 		}
 		memset(addr_un->sun_path, 0, sizeof(addr_un->sun_path));
 		memcpy(addr_un->sun_path + 1, name, name_len);
@@ -58,11 +58,11 @@ int AddrParse(const char *input,
 		addr_start = input + 1;
 		close_bracket = memchr(input, ']', input_len);
 		if (!close_bracket) {
-			return DQLITE_ERROR;
+			return COWSQL_ERROR;
 		}
 		colon = close_bracket + 1;
 		if (*colon != ':') {
-			return DQLITE_ERROR;
+			return COWSQL_ERROR;
 		}
 		service = colon + 1;
 		node =
@@ -82,7 +82,7 @@ int AddrParse(const char *input,
 	}
 
 	if (!node) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	memset(&hints, 0, sizeof(hints));
@@ -91,11 +91,11 @@ int AddrParse(const char *input,
 	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
 	rv = getaddrinfo(node, service, &hints, &res);
 	if (rv != 0) {
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err_after_strdup;
 	}
 	if (res->ai_addrlen > *addr_len) {
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err_after_getaddrinfo;
 	}
 	memcpy(addr, res->ai_addr, res->ai_addrlen);

@@ -11,7 +11,7 @@
 
 struct db
 {
-	struct config *config; /* Dqlite configuration */
+	struct config *config; /* Cowsql configuration */
 	char *filename;        /* Database filename */
 	char *path;            /* Used for on-disk db */
 	sqlite3 *follower;     /* Follower connection */

@@ -15,16 +15,16 @@ void loggerDefaultEmit(void *data, int level, const char *fmt, va_list args)
 
 	/* First, render the logging level. */
 	switch (level) {
-		case DQLITE_DEBUG:
+		case COWSQL_DEBUG:
 			sprintf(cursor, "[DEBUG]: ");
 			break;
-		case DQLITE_INFO:
+		case COWSQL_INFO:
 			sprintf(cursor, "[INFO ]: ");
 			break;
-		case DQLITE_WARN:
+		case COWSQL_WARN:
 			sprintf(cursor, "[WARN ]: ");
 			break;
-		case DQLITE_LOG_ERROR:
+		case COWSQL_LOG_ERROR:
 			sprintf(cursor, "[ERROR]: ");
 			break;
 		default:

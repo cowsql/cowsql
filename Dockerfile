@@ -1,5 +1,5 @@
-# FROM debian:buster-slim as dqlite-lib-builder 
-FROM ubuntu as dqlite-lib-builder 
+# FROM debian:buster-slim as cowsql-lib-builder 
+FROM ubuntu as cowsql-lib-builder 
 ARG DEBIAN_FRONTEND="noninteractive"
 ENV TZ=Europe/London
 ENV LD_LIBRARY_PATH=/usr/local/lib
@@ -11,25 +11,25 @@ RUN apt-get update && apt-get install -y git build-essential dh-autoreconf pkg-c
 
 WORKDIR /opt
 
-RUN git clone https://github.com/canonical/raft.git && \
-    git clone https://github.com/canonical/go-dqlite.git && \
+RUN git clone https://github.com/cowsql/raft.git && \
+    git clone https://github.com/cowsql/go-cowsql.git && \
     wget -c https://golang.org/dl/go1.15.2.linux-amd64.tar.gz -O - | tar -xzf - -C /usr/local
 
 WORKDIR /opt/raft
 
 RUN autoreconf -i && ./configure && make && make install
 
-WORKDIR /opt/dqlite
+WORKDIR /opt/cowsql
 
 COPY . .
 
 RUN autoreconf -i && ./configure && make && make install
 
-WORKDIR /opt/go-dqlite
+WORKDIR /opt/go-cowsql
 
 RUN go get -d -v ./... && \
-    go install -tags libsqlite3 ./cmd/dqlite-demo && \
-    go install -tags libsqlite3 ./cmd/dqlite
+    go install -tags libsqlite3 ./cmd/cowsql-demo && \
+    go install -tags libsqlite3 ./cmd/cowsql
 
 # FROM debian:buster-slim 
 FROM ubuntu
@@ -38,15 +38,15 @@ ENV TZ=Europe/London
 ENV LD_LIBRARY_PATH=/usr/local/lib
 ENV PATH=/opt:$PATH
 
-COPY --from=dqlite-lib-builder /go/bin /opt/
-COPY --from=dqlite-lib-builder /usr/local/lib /usr/local/lib
-COPY --from=dqlite-lib-builder \
+COPY --from=cowsql-lib-builder /go/bin /opt/
+COPY --from=cowsql-lib-builder /usr/local/lib /usr/local/lib
+COPY --from=cowsql-lib-builder \
     /usr/lib/x86_64-linux-gnu/libuv.so \
     /usr/lib/x86_64-linux-gnu/libuv.so.1\
     /usr/lib/x86_64-linux-gnu/libuv.so.1.0.0\
     /usr/lib/
 
-COPY --from=dqlite-lib-builder \
+COPY --from=cowsql-lib-builder \
     /lib/x86_64-linux-gnu/libsqlite3.so \
     /lib/x86_64-linux-gnu/libsqlite3.so.0 \
     /usr/lib/x86_64-linux-gnu/  

@@ -1,17 +1,17 @@
-/* Implementation of the raft_uv_transport interface, proxied by a dqlite
+/* Implementation of the raft_uv_transport interface, proxied by a cowsql
  * connection.
  *
  * Instead of having raft instances connect to each other directly, we pass a
- * custom connect function that causes dqlite to send a CONNECT request to the
- * dqlite server where the destination raft instance is running. That server
- * responds to the CONNECT request by forwarding the dqlite connection to its
+ * custom connect function that causes cowsql to send a CONNECT request to the
+ * cowsql server where the destination raft instance is running. That server
+ * responds to the CONNECT request by forwarding the cowsql connection to its
  * raft instance, after which the raft-to-raft connection is transparent. */
 #ifndef TRANSPORT_H_
 #define TRANSPORT_H_
 
 #include <raft/uv.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 int transportDefaultConnect(void *arg, const char *address, int *fd);
 

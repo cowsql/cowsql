@@ -5,7 +5,7 @@
 #include <sys/un.h>
 #include <time.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 #include "client/protocol.h"
 #include "conn.h"
 #include "fsm.h"
@@ -29,8 +29,8 @@
 
 #define NODE_STORE_INFO_FORMAT_V1 "v1"
 
-int dqlite__init(struct dqlite_node *d,
-		 dqlite_node_id id,
+int cowsql__init(struct cowsql_node *d,
+		 cowsql_node_id id,
 		 const char *address,
 		 const char *dir)
 {
@@ -44,14 +44,14 @@ int dqlite__init(struct dqlite_node *d,
 
 	rv = snprintf(db_dir_path, sizeof db_dir_path, DATABASE_DIR_FMT, dir);
 	if (rv == -1 || rv >= (int)(sizeof db_dir_path)) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE,
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 			 "failed to init: snprintf(rv:%d)", rv);
 		goto err;
 	}
 
 	rv = config__init(&d->config, id, address, db_dir_path);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE,
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 			 "config__init(rv:%d)", rv);
 		goto err;
 	}
@@ -63,9 +63,9 @@ int dqlite__init(struct dqlite_node *d,
 	registry__init(&d->registry, &d->config);
 	rv = uv_loop_init(&d->loop);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE,
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 			 "uv_loop_init(): %s", uv_strerror(rv));
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err_after_vfs_init;
 	}
 	rv = raftProxyInit(&d->raft_transport, &d->loop);
@@ -74,9 +74,9 @@ int dqlite__init(struct dqlite_node *d,
 	}
 	rv = raft_uv_init(&d->raft_io, &d->loop, dir, &d->raft_transport);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE,
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 			 "raft_uv_init(): %s", d->raft_io.errmsg);
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err_after_raft_transport_init;
 	}
 	rv = fsm__init(&d->raft_fsm, &d->config, &d->registry);
@@ -84,13 +84,13 @@ int dqlite__init(struct dqlite_node *d,
 		goto err_after_raft_io_init;
 	}
 
-	/* TODO: properly handle closing the dqlite server without running it */
+	/* TODO: properly handle closing the cowsql server without running it */
 	rv = raft_init(&d->raft, &d->raft_io, &d->raft_fsm, d->config.id,
 		       d->config.address);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE, "raft_init(): %s",
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE, "raft_init(): %s",
 			 raft_errmsg(&d->raft));
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 	/* TODO: expose these values through some API */
 	raft_set_election_timeout(&d->raft, 3000);
@@ -102,23 +102,23 @@ int dqlite__init(struct dqlite_node *d,
 	raft_set_max_catch_up_round_duration(&d->raft, 50 * 1000); /* 50 secs */
 	rv = sem_init(&d->ready, 0, 0);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE, "sem_init(): %s",
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE, "sem_init(): %s",
 			 strerror(errno));
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err_after_raft_fsm_init;
 	}
 	rv = sem_init(&d->stopped, 0, 0);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE, "sem_init(): %s",
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE, "sem_init(): %s",
 			 strerror(errno));
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err_after_ready_init;
 	}
 	rv = sem_init(&d->handover_done, 0, 0);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE, "sem_init(): %s",
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE, "sem_init(): %s",
 			 strerror(errno));
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err_after_stopped_init;
 	}
 
@@ -161,7 +161,7 @@ err:
 	return rv;
 }
 
-void dqlite__close(struct dqlite_node *d)
+void cowsql__close(struct cowsql_node *d)
 {
 	int rv;
 	if (!d->initialized) {
@@ -189,20 +189,20 @@ void dqlite__close(struct dqlite_node *d)
 	}
 }
 
-int dqlite_node_create(dqlite_node_id id,
+int cowsql_node_create(cowsql_node_id id,
 		       const char *address,
 		       const char *data_dir,
-		       dqlite_node **t)
+		       cowsql_node **t)
 {
 	*t = sqlite3_malloc(sizeof **t);
 	if (*t == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
-	return dqlite__init(*t, id, address, data_dir);
+	return cowsql__init(*t, id, address, data_dir);
 }
 
-int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
+int cowsql_node_set_bind_address(cowsql_node *t, const char *address)
 {
 	/* sockaddr_un is large enough for our purposes */
 	struct sockaddr_un addr_un;
@@ -213,11 +213,11 @@ int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
 	int fd;
 	int rv;
 	if (t->running) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	rv =
-	    AddrParse(address, addr, &addr_len, "8080", DQLITE_ADDR_PARSE_UNIX);
+	    AddrParse(address, addr, &addr_len, "8080", COWSQL_ADDR_PARSE_UNIX);
 	if (rv != 0) {
 		return rv;
 	}
@@ -225,12 +225,12 @@ int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
 
 	fd = socket(domain, SOCK_STREAM, 0);
 	if (fd == -1) {
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 	rv = fcntl(fd, FD_CLOEXEC);
 	if (rv != 0) {
 		close(fd);
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 
 	if (domain == AF_INET || domain == AF_INET6) {
@@ -239,20 +239,20 @@ int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
 				(const char *)&reuse, sizeof(reuse));
 		if (rv != 0) {
 			close(fd);
-			return DQLITE_ERROR;
+			return COWSQL_ERROR;
 		}
 	}
 
 	rv = bind(fd, addr, addr_len);
 	if (rv != 0) {
 		close(fd);
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 
 	rv = transport__stream(&t->loop, fd, &t->listener);
 	if (rv != 0) {
 		close(fd);
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 
 	if (domain == AF_INET || domain == AF_INET6) {
@@ -260,7 +260,7 @@ int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
 		t->bind_address = sqlite3_malloc(sz);
 		if (t->bind_address == NULL) {
 			close(fd);
-			return DQLITE_NOMEM;
+			return COWSQL_NOMEM;
 		}
 		strcpy(t->bind_address, address);
 	} else {
@@ -268,7 +268,7 @@ int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
 		t->bind_address = sqlite3_malloc((int)path_len);
 		if (t->bind_address == NULL) {
 			close(fd);
-			return DQLITE_NOMEM;
+			return COWSQL_NOMEM;
 		}
 		memset(t->bind_address, 0, path_len);
 		rv = uv_pipe_getsockname((struct uv_pipe_s *)t->listener,
@@ -277,7 +277,7 @@ int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
 			close(fd);
 			sqlite3_free(t->bind_address);
 			t->bind_address = NULL;
-			return DQLITE_ERROR;
+			return COWSQL_ERROR;
 		}
 		t->bind_address[0] = '@';
 	}
@@ -285,19 +285,19 @@ int dqlite_node_set_bind_address(dqlite_node *t, const char *address)
 	return 0;
 }
 
-const char *dqlite_node_get_bind_address(dqlite_node *t)
+const char *cowsql_node_get_bind_address(cowsql_node *t)
 {
 	return t->bind_address;
 }
 
-int dqlite_node_set_connect_func(dqlite_node *t,
+int cowsql_node_set_connect_func(cowsql_node *t,
 				 int (*f)(void *arg,
 					  const char *address,
 					  int *fd),
 				 void *arg)
 {
 	if (t->running) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 	raftProxySetConnectFunc(&t->raft_transport, f, arg);
 	/* Also save this info for use in automatic role management. */
@@ -306,63 +306,63 @@ int dqlite_node_set_connect_func(dqlite_node *t,
 	return 0;
 }
 
-int dqlite_node_set_network_latency(dqlite_node *t,
+int cowsql_node_set_network_latency(cowsql_node *t,
 				    unsigned long long nanoseconds)
 {
 	unsigned milliseconds;
 	if (t->running) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	/* 1 hour latency should be more than sufficient, also avoids overflow
 	 * issues when converting to unsigned milliseconds later on */
 	if (nanoseconds > 3600000000000ULL) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	milliseconds = (unsigned)(nanoseconds / (1000000ULL));
-	return dqlite_node_set_network_latency_ms(t, milliseconds);
+	return cowsql_node_set_network_latency_ms(t, milliseconds);
 }
 
-int dqlite_node_set_network_latency_ms(dqlite_node *t, unsigned milliseconds)
+int cowsql_node_set_network_latency_ms(cowsql_node *t, unsigned milliseconds)
 {
 	if (t->running) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	/* Currently we accept at least 1 millisecond latency and maximum 3600 s
 	 * of latency */
 	if (milliseconds == 0 || milliseconds > 3600U * 1000U) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 	raft_set_heartbeat_timeout(&t->raft, (milliseconds * 15) / 10);
 	raft_set_election_timeout(&t->raft, milliseconds * 15);
 	return 0;
 }
 
-int dqlite_node_set_failure_domain(dqlite_node *n, unsigned long long code)
+int cowsql_node_set_failure_domain(cowsql_node *n, unsigned long long code)
 {
 	n->config.failure_domain = code;
 	return 0;
 }
 
-int dqlite_node_set_snapshot_params(dqlite_node *n,
+int cowsql_node_set_snapshot_params(cowsql_node *n,
 				    unsigned snapshot_threshold,
 				    unsigned snapshot_trailing)
 {
 	if (n->running) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	if (snapshot_trailing < 4) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	/* This is a safety precaution and allows to recover data from the
 	 * second last raft snapshot and segment files in case the last raft
 	 * snapshot is unusable. */
 	if (snapshot_trailing < snapshot_threshold) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	raft_set_snapshot_threshold(&n->raft, snapshot_threshold);
@@ -371,10 +371,10 @@ int dqlite_node_set_snapshot_params(dqlite_node *n,
 }
 
 #define KB(N) (1024 * N)
-int dqlite_node_set_block_size(dqlite_node *n, size_t size)
+int cowsql_node_set_block_size(cowsql_node *n, size_t size)
 {
 	if (n->running) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
 	switch (size) {
@@ -390,21 +390,21 @@ int dqlite_node_set_block_size(dqlite_node *n, size_t size)
 		case KB(256):
 			break;
 		default:
-			return DQLITE_ERROR;
+			return COWSQL_ERROR;
 	}
 
 	raft_uv_set_block_size(&n->raft_io, size);
 	return 0;
 }
-int dqlite_node_enable_disk_mode(dqlite_node *n)
+int cowsql_node_enable_disk_mode(cowsql_node *n)
 {
 	int rv;
 
 	if (n->running) {
-		return DQLITE_MISUSE;
+		return COWSQL_MISUSE;
 	}
 
-	rv = dqlite_vfs_enable_disk(&n->vfs);
+	rv = cowsql_vfs_enable_disk(&n->vfs);
 	if (rv != 0) {
 		return rv;
 	}
@@ -421,8 +421,8 @@ int dqlite_node_enable_disk_mode(dqlite_node *n)
 	return 0;
 }
 
-static int maybeBootstrap(dqlite_node *d,
-			  dqlite_node_id id,
+static int maybeBootstrap(cowsql_node *d,
+			  cowsql_node_id id,
 			  const char *address)
 {
 	struct raft_configuration configuration;
@@ -434,7 +434,7 @@ static int maybeBootstrap(dqlite_node *d,
 	rv = raft_configuration_add(&configuration, id, address, RAFT_VOTER);
 	if (rv != 0) {
 		assert(rv == RAFT_NOMEM);
-		rv = DQLITE_NOMEM;
+		rv = COWSQL_NOMEM;
 		goto out;
 	};
 	rv = raft_bootstrap(&d->raft, &configuration);
@@ -442,9 +442,9 @@ static int maybeBootstrap(dqlite_node *d,
 		if (rv == RAFT_CANTBOOTSTRAP) {
 			rv = 0;
 		} else {
-			snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE,
+			snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 				 "raft_bootstrap(): %s", raft_errmsg(&d->raft));
-			rv = DQLITE_ERROR;
+			rv = COWSQL_ERROR;
 		}
 		goto out;
 	}
@@ -460,7 +460,7 @@ out:
  */
 static void raftCloseCb(struct raft *raft)
 {
-	struct dqlite_node *s = raft->data;
+	struct cowsql_node *s = raft->data;
 	raft_uv_close(&s->raft_io);
 	uv_close((struct uv_handle_s *)&s->stop, NULL);
 	uv_close((struct uv_handle_s *)&s->handover, NULL);
@@ -476,7 +476,7 @@ static void destroy_conn(struct conn *conn)
 	sqlite3_free(conn);
 }
 
-static void handoverDoneCb(struct dqlite_node *d, int status)
+static void handoverDoneCb(struct cowsql_node *d, int status)
 {
 	d->handover_status = status;
 	sem_post(&d->handover_done);
@@ -484,7 +484,7 @@ static void handoverDoneCb(struct dqlite_node *d, int status)
 
 static void handoverCb(uv_async_t *handover)
 {
-	struct dqlite_node *d = handover->data;
+	struct cowsql_node *d = handover->data;
 	int rv;
 
 	/* Nothing to do. */
@@ -503,7 +503,7 @@ static void handoverCb(uv_async_t *handover)
 
 static void stopCb(uv_async_t *stop)
 {
-	struct dqlite_node *d = stop->data;
+	struct cowsql_node *d = stop->data;
 	queue *head;
 	struct conn *conn;
 	int rv;
@@ -534,7 +534,7 @@ static void stopCb(uv_async_t *stop)
  */
 static void startup_cb(uv_timer_t *startup)
 {
-	struct dqlite_node *d = startup->data;
+	struct cowsql_node *d = startup->data;
 	int rv;
 	d->running = true;
 	rv = sem_post(&d->ready);
@@ -543,7 +543,7 @@ static void startup_cb(uv_timer_t *startup)
 
 static void listenCb(uv_stream_t *listener, int status)
 {
-	struct dqlite_node *t = listener->data;
+	struct cowsql_node *t = listener->data;
 	struct uv_stream_s *stream;
 	struct conn *conn;
 	struct id_state seed;
@@ -641,7 +641,7 @@ err:
 
 static void monitor_cb(uv_prepare_t *monitor)
 {
-	struct dqlite_node *d = monitor->data;
+	struct cowsql_node *d = monitor->data;
 	int state = raft_state(&d->raft);
 	queue *head;
 	struct conn *conn;
@@ -667,11 +667,11 @@ static void monitor_cb(uv_prepare_t *monitor)
 /* Runs every tick on the main thread to kick off roles adjustment. */
 static void roleManagementTimerCb(uv_timer_t *handle)
 {
-	struct dqlite_node *d = handle->data;
+	struct cowsql_node *d = handle->data;
 	RolesAdjust(d);
 }
 
-static int taskRun(struct dqlite_node *d)
+static int taskRun(struct cowsql_node *d)
 {
 	int rv;
 
@@ -722,7 +722,7 @@ static int taskRun(struct dqlite_node *d)
 	d->raft.data = d;
 	rv = raft_start(&d->raft);
 	if (rv != 0) {
-		snprintf(d->errmsg, DQLITE_ERRMSG_BUF_SIZE, "raft_start(): %s",
+		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE, "raft_start(): %s",
 			 raft_errmsg(&d->raft));
 		/* Unblock any client of taskReady */
 		sem_post(&d->ready);
@@ -739,31 +739,31 @@ static int taskRun(struct dqlite_node *d)
 	return 0;
 }
 
-int dqlite_node_set_target_voters(dqlite_node *n, int voters)
+int cowsql_node_set_target_voters(cowsql_node *n, int voters)
 {
 	n->config.voters = voters;
 	return 0;
 }
 
-int dqlite_node_set_target_standbys(dqlite_node *n, int standbys)
+int cowsql_node_set_target_standbys(cowsql_node *n, int standbys)
 {
 	n->config.standbys = standbys;
 	return 0;
 }
 
-int dqlite_node_enable_role_management(dqlite_node *n)
+int cowsql_node_enable_role_management(cowsql_node *n)
 {
 	n->role_management = true;
 	return 0;
 }
 
-int dqlite_node_set_auto_recovery(dqlite_node *n, bool enabled)
+int cowsql_node_set_auto_recovery(cowsql_node *n, bool enabled)
 {
 	raft_uv_set_auto_recovery(&n->raft_io, enabled);
 	return 0;
 }
 
-const char *dqlite_node_errmsg(dqlite_node *n)
+const char *cowsql_node_errmsg(cowsql_node *n)
 {
 	if (n != NULL) {
 		return n->errmsg;
@@ -773,7 +773,7 @@ const char *dqlite_node_errmsg(dqlite_node *n)
 
 static void *taskStart(void *arg)
 {
-	struct dqlite_node *t = arg;
+	struct cowsql_node *t = arg;
 	int rv;
 	rv = taskRun(t);
 	if (rv != 0) {
@@ -783,27 +783,27 @@ static void *taskStart(void *arg)
 	return NULL;
 }
 
-void dqlite_node_destroy(dqlite_node *d)
+void cowsql_node_destroy(cowsql_node *d)
 {
-	dqlite__close(d);
+	cowsql__close(d);
 	sqlite3_free(d);
 }
 
-/* Wait until a dqlite server is ready and can handle connections.
+/* Wait until a cowsql server is ready and can handle connections.
 **
 ** Returns true if the server has been successfully started, false otherwise.
 **
 ** This is a thread-safe API, but must be invoked before any call to
-** dqlite_stop or dqlite_handle.
+** cowsql_stop or cowsql_handle.
 */
-static bool taskReady(struct dqlite_node *d)
+static bool taskReady(struct cowsql_node *d)
 {
 	/* Wait for the ready semaphore */
 	sem_wait(&d->ready);
 	return d->running;
 }
 
-static int dqliteDatabaseDirSetup(dqlite_node *t)
+static int cowsqlDatabaseDirSetup(cowsql_node *t)
 {
 	int rv;
 	if (!t->config.disk) {
@@ -813,14 +813,14 @@ static int dqliteDatabaseDirSetup(dqlite_node *t)
 
 	rv = FsEnsureDir(t->config.dir);
 	if (rv != 0) {
-		snprintf(t->errmsg, DQLITE_ERRMSG_BUF_SIZE,
+		snprintf(t->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 			 "Error creating database dir: %d", rv);
 		return rv;
 	}
 
 	rv = FsRemoveDirFiles(t->config.dir);
 	if (rv != 0) {
-		snprintf(t->errmsg, DQLITE_ERRMSG_BUF_SIZE,
+		snprintf(t->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 			 "Error removing files in database dir: %d", rv);
 		return rv;
 	}
@@ -828,14 +828,14 @@ static int dqliteDatabaseDirSetup(dqlite_node *t)
 	return rv;
 }
 
-int dqlite_node_start(dqlite_node *t)
+int cowsql_node_start(cowsql_node *t)
 {
 	int rv;
-	tracef("dqlite node start");
+	tracef("cowsql node start");
 
-	dqliteTracingMaybeEnable(true);
+	cowsqlTracingMaybeEnable(true);
 
-	rv = dqliteDatabaseDirSetup(t);
+	rv = cowsqlDatabaseDirSetup(t);
 	if (rv != 0) {
 		tracef("database dir setup failed %s", t->errmsg);
 		goto err;
@@ -850,13 +850,13 @@ int dqlite_node_start(dqlite_node *t)
 	rv = pthread_create(&t->thread, 0, &taskStart, t);
 	if (rv != 0) {
 		tracef("pthread create failed %d", rv);
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err;
 	}
 
 	if (!taskReady(t)) {
 		tracef("!taskReady");
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto err;
 	}
 
@@ -866,7 +866,7 @@ err:
 	return rv;
 }
 
-int dqlite_node_handover(dqlite_node *d)
+int cowsql_node_handover(cowsql_node *d)
 {
 	int rv;
 
@@ -878,9 +878,9 @@ int dqlite_node_handover(dqlite_node *d)
 	return d->handover_status;
 }
 
-int dqlite_node_stop(dqlite_node *d)
+int cowsql_node_stop(cowsql_node *d)
 {
-	tracef("dqlite node stop");
+	tracef("cowsql node stop");
 	void *result;
 	int rv;
 
@@ -893,36 +893,36 @@ int dqlite_node_stop(dqlite_node *d)
 	return (int)((uintptr_t)result);
 }
 
-int dqlite_node_recover(dqlite_node *n,
-			struct dqlite_node_info infos[],
+int cowsql_node_recover(cowsql_node *n,
+			struct cowsql_node_info infos[],
 			int n_info)
 {
-	tracef("dqlite node recover");
+	tracef("cowsql node recover");
 	int i;
 	int ret;
 
-	struct dqlite_node_info_ext *infos_ext =
+	struct cowsql_node_info_ext *infos_ext =
 	    calloc((size_t)n_info, sizeof(*infos_ext));
 	if (infos_ext == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	for (i = 0; i < n_info; i++) {
 		infos_ext[i].size = sizeof(*infos_ext);
 		infos_ext[i].id = infos[i].id;
 		infos_ext[i].address = PTR_TO_UINT64(infos[i].address);
-		infos_ext[i].dqlite_role = DQLITE_VOTER;
+		infos_ext[i].cowsql_role = COWSQL_VOTER;
 	}
 
-	ret = dqlite_node_recover_ext(n, infos_ext, n_info);
+	ret = cowsql_node_recover_ext(n, infos_ext, n_info);
 	free(infos_ext);
 	return ret;
 }
 
-static bool node_info_valid(struct dqlite_node_info_ext *info)
+static bool node_info_valid(struct cowsql_node_info_ext *info)
 {
 	/* Reject any size smaller than the original definition of the
 	 * extensible struct. */
-	if (info->size < DQLITE_NODE_INFO_EXT_SZ_ORIG) {
+	if (info->size < COWSQL_NODE_INFO_EXT_SZ_ORIG) {
 		return false;
 	}
 
@@ -933,7 +933,7 @@ static bool node_info_valid(struct dqlite_node_info_ext *info)
 
 	/* If the user uses a newer, and larger version of the struct, make sure
 	 * the unknown fields are zeroed out. */
-	uint64_t known_size = sizeof(struct dqlite_node_info_ext);
+	uint64_t known_size = sizeof(struct cowsql_node_info_ext);
 	if (info->size > known_size) {
 		const uint64_t num_known_fields = known_size / sizeof(uint64_t);
 		const uint64_t num_extra_fields =
@@ -950,37 +950,37 @@ static bool node_info_valid(struct dqlite_node_info_ext *info)
 	return true;
 }
 
-int dqlite_node_recover_ext(dqlite_node *n,
-			    struct dqlite_node_info_ext infos[],
+int cowsql_node_recover_ext(cowsql_node *n,
+			    struct cowsql_node_info_ext infos[],
 			    int n_info)
 {
-	tracef("dqlite node recover ext");
+	tracef("cowsql node recover ext");
 	struct raft_configuration configuration;
 	int i;
 	int rv;
 
 	raft_configuration_init(&configuration);
 	for (i = 0; i < n_info; i++) {
-		struct dqlite_node_info_ext *info = &infos[i];
+		struct cowsql_node_info_ext *info = &infos[i];
 		if (!node_info_valid(info)) {
-			rv = DQLITE_MISUSE;
+			rv = COWSQL_MISUSE;
 			goto out;
 		}
-		int raft_role = translateDqliteRole((int)info->dqlite_role);
+		int raft_role = translateCowsqlRole((int)info->cowsql_role);
 		const char *address =
 		    UINT64_TO_PTR(info->address, const char *);
 		rv = raft_configuration_add(&configuration, info->id, address,
 					    raft_role);
 		if (rv != 0) {
 			assert(rv == RAFT_NOMEM);
-			rv = DQLITE_NOMEM;
+			rv = COWSQL_NOMEM;
 			goto out;
 		};
 	}
 
 	rv = raft_recover(&n->raft, &configuration);
 	if (rv != 0) {
-		rv = DQLITE_ERROR;
+		rv = COWSQL_ERROR;
 		goto out;
 	}
 
@@ -989,7 +989,7 @@ out:
 	return rv;
 }
 
-dqlite_node_id dqlite_generate_node_id(const char *address)
+cowsql_node_id cowsql_generate_node_id(const char *address)
 {
 	tracef("generate node id");
 	struct timespec ts;
@@ -1115,11 +1115,11 @@ static int parseNodeStore(char *buf, size_t len, struct node_store_cache *cache)
 		*nl = '\0';
 		p = nl + 1;
 		if (strcmp(role_str, "spare") == 0) {
-			role = DQLITE_SPARE;
+			role = COWSQL_SPARE;
 		} else if (strcmp(role_str, "standby") == 0) {
-			role = DQLITE_STANDBY;
+			role = COWSQL_STANDBY;
 		} else if (strcmp(role_str, "voter") == 0) {
-			role = DQLITE_VOTER;
+			role = COWSQL_VOTER;
 		} else {
 			return 1;
 		}
@@ -1141,7 +1141,7 @@ static int parseNodeStore(char *buf, size_t len, struct node_store_cache *cache)
  * - there is already a "retry" mechanism in the form of the refreshTask thread,
  *   which periodically tries to write the node store file
  */
-static void writeNodeStore(struct dqlite_server *server)
+static void writeNodeStore(struct cowsql_server *server)
 {
 	int store_fd;
 	FILE *f;
@@ -1168,9 +1168,9 @@ static void writeNodeStore(struct dqlite_server *server)
 	}
 	for (i = 0; i < server->cache.len; i += 1) {
 		role_name =
-		    (server->cache.nodes[i].role == DQLITE_SPARE)
+		    (server->cache.nodes[i].role == COWSQL_SPARE)
 			? "spare"
-			: ((server->cache.nodes[i].role == DQLITE_STANDBY)
+			: ((server->cache.nodes[i].role == COWSQL_STANDBY)
 			       ? "standby"
 			       : "voter");
 		k = fprintf(f, "%s\n%" PRIu64 "\n%s\n",
@@ -1251,7 +1251,7 @@ static int parseLocalInfo(char *buf,
 }
 
 /* Write the local node's info to disk. */
-static int writeLocalInfo(struct dqlite_server *server)
+static int writeLocalInfo(struct cowsql_server *server)
 {
 	int info_fd;
 	FILE *f;
@@ -1284,7 +1284,7 @@ static int writeLocalInfo(struct dqlite_server *server)
 	return 0;
 }
 
-int dqlite_server_create(const char *path, dqlite_server **server)
+int cowsql_server_create(const char *path, cowsql_server **server)
 {
 	int rv;
 
@@ -1301,25 +1301,25 @@ int dqlite_server_create(const char *path, dqlite_server **server)
 	return 0;
 }
 
-int dqlite_server_set_address(dqlite_server *server, const char *address)
+int cowsql_server_set_address(cowsql_server *server, const char *address)
 {
 	free(server->local_addr);
 	server->local_addr = strdupChecked(address);
 	return 0;
 }
 
-int dqlite_server_set_auto_bootstrap(dqlite_server *server, bool on)
+int cowsql_server_set_auto_bootstrap(cowsql_server *server, bool on)
 {
 	server->bootstrap = on;
 	return 0;
 }
 
-int dqlite_server_set_auto_join(dqlite_server *server,
+int cowsql_server_set_auto_join(cowsql_server *server,
 				const char *const *addrs,
 				unsigned n)
 {
 	/* We don't know the ID or role of this server, so leave those fields
-	 * zeroed. In dqlite_server_start, we must take care not to use this
+	 * zeroed. In cowsql_server_start, we must take care not to use this
 	 * initial node store cache to do anything except find a server to
 	 * connect to. Once we've done that, we immediately fetch a fresh list
 	 * of cluster members that includes ID and role information, and clear
@@ -1334,15 +1334,15 @@ int dqlite_server_set_auto_join(dqlite_server *server,
 	return 0;
 }
 
-int dqlite_server_set_bind_address(dqlite_server *server, const char *addr)
+int cowsql_server_set_bind_address(cowsql_server *server, const char *addr)
 {
 	free(server->bind_addr);
 	server->bind_addr = strdupChecked(addr);
 	return 0;
 }
 
-int dqlite_server_set_connect_func(dqlite_server *server,
-				   dqlite_connect_func f,
+int cowsql_server_set_connect_func(cowsql_server *server,
+				   cowsql_connect_func f,
 				   void *arg)
 {
 	server->connect = f;
@@ -1373,7 +1373,7 @@ static int openAndHandshake(struct client_proto *proto,
 }
 
 /* TODO prioritize voters > standbys > spares */
-static int connectToSomeServer(struct dqlite_server *server,
+static int connectToSomeServer(struct cowsql_server *server,
 			       struct client_context *context)
 {
 	unsigned i;
@@ -1409,7 +1409,7 @@ static int tryReconnectToLeader(struct client_proto *proto,
 	}
 
 	rv = clientRecvServer(proto, &id, &addr, context);
-	if (rv == DQLITE_CLIENT_PROTO_RECEIVED_FAILURE) {
+	if (rv == COWSQL_CLIENT_PROTO_RECEIVED_FAILURE) {
 		return 1;
 	} else if (rv != 0) {
 		clientClose(proto);
@@ -1432,7 +1432,7 @@ static int tryReconnectToLeader(struct client_proto *proto,
 	return 0;
 }
 
-static int refreshNodeStoreCache(struct dqlite_server *server,
+static int refreshNodeStoreCache(struct cowsql_server *server,
 				 struct client_context *context)
 {
 	struct client_node_info *servers;
@@ -1457,7 +1457,7 @@ static int refreshNodeStoreCache(struct dqlite_server *server,
 	return 0;
 }
 
-static int maybeJoinCluster(struct dqlite_server *server,
+static int maybeJoinCluster(struct cowsql_server *server,
 			    struct client_context *context)
 {
 	int rv;
@@ -1484,7 +1484,7 @@ static int maybeJoinCluster(struct dqlite_server *server,
 	return 0;
 }
 
-static int bootstrapOrJoinCluster(struct dqlite_server *server,
+static int bootstrapOrJoinCluster(struct cowsql_server *server,
 				  struct client_context *context)
 {
 	struct client_node_info info;
@@ -1499,7 +1499,7 @@ static int bootstrapOrJoinCluster(struct dqlite_server *server,
 
 		info.addr = strdupChecked(server->local_addr);
 		info.id = server->local_id;
-		info.role = DQLITE_VOTER;
+		info.role = COWSQL_VOTER;
 		pushNodeInfo(&server->cache, info);
 	} else {
 		rv = connectToSomeServer(server, context);
@@ -1529,7 +1529,7 @@ static int bootstrapOrJoinCluster(struct dqlite_server *server,
 
 static void *refreshTask(void *arg)
 {
-	struct dqlite_server *server = arg;
+	struct cowsql_server *server = arg;
 	struct client_context context;
 	struct timespec ts;
 	unsigned long long nsec;
@@ -1581,7 +1581,7 @@ static void *refreshTask(void *arg)
 	return NULL;
 }
 
-int dqlite_server_start(dqlite_server *server)
+int cowsql_server_start(cowsql_server *server)
 {
 	int info_fd;
 	int store_fd;
@@ -1669,27 +1669,27 @@ int dqlite_server_start(dqlite_server *server)
 		server->local_id =
 		    server->bootstrap
 			? BOOTSTRAP_ID
-			: dqlite_generate_node_id(server->local_addr);
+			: cowsql_generate_node_id(server->local_addr);
 	}
 
-	rv = dqlite_node_create(server->local_id, server->local_addr,
+	rv = cowsql_node_create(server->local_id, server->local_addr,
 				server->dir_path, &server->local);
 	if (rv != 0) {
 		goto err_after_create_node;
 	}
-	rv = dqlite_node_set_bind_address(
+	rv = cowsql_node_set_bind_address(
 	    server->local, (server->bind_addr != NULL) ? server->bind_addr
 						       : server->local_addr);
 	if (rv != 0) {
 		goto err_after_create_node;
 	}
-	rv = dqlite_node_set_connect_func(server->local, server->connect,
+	rv = cowsql_node_set_connect_func(server->local, server->connect,
 					  server->connect_arg);
 	if (rv != 0) {
 		goto err_after_create_node;
 	}
 
-	rv = dqlite_node_start(server->local);
+	rv = cowsql_node_start(server->local);
 	if (rv != 0) {
 		goto err_after_create_node;
 	}
@@ -1716,9 +1716,9 @@ int dqlite_server_start(dqlite_server *server)
 	return 0;
 
 err_after_start_node:
-	dqlite_node_stop(server->local);
+	cowsql_node_stop(server->local);
 err_after_create_node:
-	dqlite_node_destroy(server->local);
+	cowsql_node_destroy(server->local);
 	server->local = NULL;
 err_after_open_store:
 	close(store_fd);
@@ -1731,21 +1731,21 @@ err:
 	return 1;
 }
 
-dqlite_node_id dqlite_server_get_id(dqlite_server *server)
+cowsql_node_id cowsql_server_get_id(cowsql_server *server)
 {
 	return server->local_id;
 }
 
-int dqlite_server_handover(dqlite_server *server)
+int cowsql_server_handover(cowsql_server *server)
 {
-	int rv = dqlite_node_handover(server->local);
+	int rv = cowsql_node_handover(server->local);
 	if (rv != 0) {
 		return 1;
 	}
 	return 0;
 }
 
-int dqlite_server_stop(dqlite_server *server)
+int cowsql_server_stop(cowsql_server *server)
 {
 	void *ret;
 	int rv;
@@ -1769,14 +1769,14 @@ int dqlite_server_stop(dqlite_server *server)
 	clientClose(&server->proto);
 
 	server->started = false;
-	rv = dqlite_node_stop(server->local);
+	rv = cowsql_node_stop(server->local);
 	if (rv != 0) {
 		return 1;
 	}
 	return 0;
 }
 
-void dqlite_server_destroy(dqlite_server *server)
+void cowsql_server_destroy(cowsql_server *server)
 {
 	pthread_cond_destroy(&server->cond);
 	pthread_mutex_destroy(&server->mutex);
@@ -1785,7 +1785,7 @@ void dqlite_server_destroy(dqlite_server *server)
 
 	free(server->dir_path);
 	if (server->local != NULL) {
-		dqlite_node_destroy(server->local);
+		cowsql_node_destroy(server->local);
 	}
 	free(server->local_addr);
 	free(server->bind_addr);

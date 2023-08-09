@@ -7,11 +7,11 @@
 
 #include <sqlite3.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include "assert.h"
 
-#define DQLITE_NOTFOUND 1002
+#define COWSQL_NOTFOUND 1002
 
 /**
  * Define a type-safe registry able to allocate and lookup items of a given
@@ -47,7 +47,7 @@
 	struct TYPE *NAME##_get(struct NAME *r, size_t id);                    \
                                                                                \
 	/* Get the index of the first item matching the given hash key. Return \
-	 * 0 on success and DQLITE_NOTFOUND otherwise. */                      \
+	 * 0 on success and COWSQL_NOTFOUND otherwise. */                      \
 	int NAME##_idx(struct NAME *r, const char *key, size_t *i);            \
                                                                                \
 	/* Delete a previously added item. */                                  \
@@ -118,7 +118,7 @@
 			buf = sqlite3_realloc(r->buf,                        \
 					      (int)(cap * sizeof(*r->buf))); \
 			if (buf == NULL) {                                   \
-				return DQLITE_NOMEM;                         \
+				return COWSQL_NOMEM;                         \
 			}                                                    \
 			r->buf = buf;                                        \
 			r->cap = cap;                                        \
@@ -131,7 +131,7 @@
 		/* Allocate and initialize the new item */                   \
 		*item = sqlite3_malloc(sizeof **item);                       \
 		if (*item == NULL)                                           \
-			return DQLITE_NOMEM;                                 \
+			return COWSQL_NOMEM;                                 \
                                                                              \
 		(*item)->id = i;                                             \
                                                                              \
@@ -185,7 +185,7 @@
 			}                                                    \
 		}                                                            \
                                                                              \
-		return DQLITE_NOTFOUND;                                      \
+		return COWSQL_NOTFOUND;                                      \
 	}                                                                    \
                                                                              \
 	int NAME##_del(struct NAME *r, struct TYPE *item)                    \
@@ -197,13 +197,13 @@
 		assert(r != NULL);                                           \
                                                                              \
 		if (i >= r->len) {                                           \
-			return DQLITE_NOTFOUND;                              \
+			return COWSQL_NOTFOUND;                              \
 		}                                                            \
                                                                              \
 		/* Check that the item address actually matches the one      \
 		 * we have in the registry */                                \
 		if (*(r->buf + i) != item) {                                 \
-			return DQLITE_NOTFOUND;                              \
+			return COWSQL_NOTFOUND;                              \
 		}                                                            \
                                                                              \
 		TYPE##_close(item);                                          \

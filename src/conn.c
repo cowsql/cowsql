@@ -11,7 +11,7 @@ static int init_read(struct conn *c, uv_buf_t *buf, size_t size)
 	buffer__reset(&c->read);
 	buf->base = buffer__advance(&c->read, size);
 	if (buf->base == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	buf->len = size;
 	return 0;
@@ -148,7 +148,7 @@ static void read_request_cb(struct transport *transport, int status)
 	buffer__advance(&c->write, message__sizeof(&c->response)); /* Header */
 
 	switch (c->request.type) {
-		case DQLITE_REQUEST_CONNECT:
+		case COWSQL_REQUEST_CONNECT:
 			raft_connect(c);
 			return;
 	}
@@ -167,7 +167,7 @@ static int read_request(struct conn *c)
 	uv_buf_t buf;
 	int rv;
 	if (UINT64_C(8) * (uint64_t)c->request.words > (uint64_t)UINT32_MAX) {
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 	rv = init_read(c, &buf, c->request.words * 8);
 	if (rv != 0) {
@@ -248,8 +248,8 @@ static void read_protocol_cb(struct transport *transport, int status)
 	rv = uint64__decode(&cursor, &c->protocol);
 	assert(rv == 0); /* Can't fail, we know we have enough bytes */
 
-	if (c->protocol != DQLITE_PROTOCOL_VERSION &&
-	    c->protocol != DQLITE_PROTOCOL_VERSION_LEGACY) {
+	if (c->protocol != COWSQL_PROTOCOL_VERSION &&
+	    c->protocol != COWSQL_PROTOCOL_VERSION_LEGACY) {
 		/* errorf(c->logger, "unknown protocol version: %lx", */
 		/* c->protocol); */
 		/* TODO: instead of closing the connection we should return

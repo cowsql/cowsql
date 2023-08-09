@@ -4,11 +4,11 @@
 #include "logger.h"
 
 /**
- * Value object holding dqlite configuration.
+ * Value object holding cowsql configuration.
  */
 struct config
 {
-	dqlite_node_id id;             /* Unique instance ID */
+	cowsql_node_id id;             /* Unique instance ID */
 	char *address;                 /* Instance address */
 	unsigned heartbeat_timeout;    /* In milliseconds */
 	unsigned page_size;            /* Database page size */
@@ -28,7 +28,7 @@ struct config
  * defaults. A copy will be made of the given @address.
  */
 int config__init(struct config *c,
-		 dqlite_node_id id,
+		 cowsql_node_id id,
 		 const char *address,
 		 const char *dir);
 
@@ -37,4 +37,4 @@ int config__init(struct config *c,
  */
 void config__close(struct config *c);
 
-#endif /* DQLITE_OPTIONS_H */
+#endif /* COWSQL_OPTIONS_H */

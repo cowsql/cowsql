@@ -336,7 +336,7 @@ TEST_CASE(decoder, type, iso8601, NULL)
 {
 	struct tuple_decoder decoder;
 	uint8_t buf[5][8] __attribute__((aligned(sizeof(uint64_t)))) = {
-	    {DQLITE_ISO8601, 0, 0, 0, 0, 0, 0, 0},
+	    {COWSQL_ISO8601, 0, 0, 0, 0, 0, 0, 0},
 	};
 	struct cursor cursor = {buf, sizeof buf};
 	struct value value;
@@ -349,7 +349,7 @@ TEST_CASE(decoder, type, iso8601, NULL)
 	DECODER_INIT(1);
 	DECODER_NEXT;
 
-	ASSERT_VALUE_TYPE(DQLITE_ISO8601);
+	ASSERT_VALUE_TYPE(COWSQL_ISO8601);
 	munit_assert_string_equal(value.iso8601, "2018-07-20 09:49:05+00:00");
 
 	return MUNIT_OK;
@@ -360,7 +360,7 @@ TEST_CASE(decoder, type, boolean, NULL)
 {
 	struct tuple_decoder decoder;
 	uint8_t buf[][8] __attribute__((aligned(sizeof(uint64_t)))) = {
-	    {DQLITE_BOOLEAN, 0, 0, 0, 0, 0, 0, 0},
+	    {COWSQL_BOOLEAN, 0, 0, 0, 0, 0, 0, 0},
 	    {1, 0, 0, 0, 0, 0, 0, 0},
 	};
 	struct cursor cursor = {buf, sizeof buf};
@@ -372,7 +372,7 @@ TEST_CASE(decoder, type, boolean, NULL)
 	DECODER_INIT(1);
 	DECODER_NEXT;
 
-	ASSERT_VALUE_TYPE(DQLITE_BOOLEAN);
+	ASSERT_VALUE_TYPE(COWSQL_BOOLEAN);
 	munit_assert_uint64(value.boolean, ==, 1);
 
 	return MUNIT_OK;
@@ -610,11 +610,11 @@ TEST_CASE(encoder, type, unixtime, NULL)
 
 	ENCODER_INIT(1, TUPLE__ROW);
 
-	value.type = DQLITE_UNIXTIME;
+	value.type = COWSQL_UNIXTIME;
 	value.unixtime = 12345;
 	ENCODER_NEXT;
 
-	munit_assert_int(buf[0][0], ==, DQLITE_UNIXTIME);
+	munit_assert_int(buf[0][0], ==, COWSQL_UNIXTIME);
 	uint64_t *value_ptr =
 	    __builtin_assume_aligned(buf[1], sizeof(uint64_t));
 	munit_assert_uint64(*value_ptr, ==,
@@ -633,11 +633,11 @@ TEST_CASE(encoder, type, iso8601, NULL)
 
 	ENCODER_INIT(1, TUPLE__ROW);
 
-	value.type = DQLITE_ISO8601;
+	value.type = COWSQL_ISO8601;
 	value.iso8601 = "2018-07-20 09:49:05+00:00";
 	ENCODER_NEXT;
 
-	munit_assert_int(buf[0][0], ==, DQLITE_ISO8601);
+	munit_assert_int(buf[0][0], ==, COWSQL_ISO8601);
 	munit_assert_string_equal((char *)buf[1], "2018-07-20 09:49:05+00:00");
 
 	return MUNIT_OK;
@@ -653,11 +653,11 @@ TEST_CASE(encoder, type, boolean, NULL)
 
 	ENCODER_INIT(1, TUPLE__ROW);
 
-	value.type = DQLITE_BOOLEAN;
+	value.type = COWSQL_BOOLEAN;
 	value.boolean = 1;
 	ENCODER_NEXT;
 
-	munit_assert_int(buf[0][0], ==, DQLITE_BOOLEAN);
+	munit_assert_int(buf[0][0], ==, COWSQL_BOOLEAN);
 	uint64_t *value_ptr =
 	    __builtin_assume_aligned(buf[1], sizeof(uint64_t));
 	munit_assert_uint64(*value_ptr, ==, ByteFlipLe64(value.boolean));

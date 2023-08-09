@@ -13,15 +13,15 @@ static int value_type(sqlite3_stmt *stmt, int i)
 		    (strcasecmp(column_type_name, "DATE") == 0) ||
 		    (strcasecmp(column_type_name, "TIMESTAMP") == 0)) {
 			if (type == SQLITE_INTEGER) {
-				type = DQLITE_UNIXTIME;
+				type = COWSQL_UNIXTIME;
 			} else {
 				assert(type == SQLITE_TEXT ||
 				       type == SQLITE_NULL);
-				type = DQLITE_ISO8601;
+				type = COWSQL_ISO8601;
 			}
 		} else if (strcasecmp(column_type_name, "BOOLEAN") == 0) {
 			assert(type == SQLITE_INTEGER || type == SQLITE_NULL);
-			type = DQLITE_BOOLEAN;
+			type = COWSQL_BOOLEAN;
 		}
 	}
 
@@ -68,17 +68,17 @@ static int encode_row(sqlite3_stmt *stmt, struct buffer *buffer, int n)
 				value.text =
 				    (text_t)sqlite3_column_text(stmt, i);
 				break;
-			case DQLITE_UNIXTIME:
+			case COWSQL_UNIXTIME:
 				value.integer = sqlite3_column_int64(stmt, i);
 				break;
-			case DQLITE_ISO8601:
+			case COWSQL_ISO8601:
 				value.text =
 				    (text_t)sqlite3_column_text(stmt, i);
 				if (value.text == NULL) {
 					value.text = "";
 				}
 				break;
-			case DQLITE_BOOLEAN:
+			case COWSQL_BOOLEAN:
 				value.integer = sqlite3_column_int64(stmt, i);
 				break;
 			default:

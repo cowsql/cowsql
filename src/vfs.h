@@ -5,13 +5,13 @@
 
 #include "config.h"
 
-/* Initialize the given SQLite VFS interface with dqlite's custom
+/* Initialize the given SQLite VFS interface with cowsql's custom
  * implementation. */
 int VfsInit(struct sqlite3_vfs *vfs, const char *name);
 
 int VfsEnableDisk(struct sqlite3_vfs *vfs);
 
-/* Release all memory associated with the given dqlite in-memory VFS
+/* Release all memory associated with the given cowsql in-memory VFS
  * implementation.
  *
  * This function also automatically unregister the implementation from the
@@ -22,7 +22,7 @@ void VfsClose(struct sqlite3_vfs *vfs);
  * return its content if so. */
 int VfsPoll(sqlite3_vfs *vfs,
 	    const char *database,
-	    dqlite_vfs_frame **frames,
+	    cowsql_vfs_frame **frames,
 	    unsigned *n);
 
 /* Append the given frames to the WAL. */
@@ -41,22 +41,22 @@ int VfsSnapshot(sqlite3_vfs *vfs, const char *filename, void **data, size_t *n);
 /* Makes a full, shallow snapshot of a database. The first n-1 buffers will each
  * contain a pointer to the actual database pages, while the n'th buffer
  * will contain a copy of the WAL. `bufs` MUST point to an array of n
- * `dqlite_buffer` structs and n MUST equal 1 + the number of pages in
+ * `cowsql_buffer` structs and n MUST equal 1 + the number of pages in
  * the database. */
 int VfsShallowSnapshot(sqlite3_vfs *vfs,
 		       const char *filename,
-		       struct dqlite_buffer bufs[],
+		       struct cowsql_buffer bufs[],
 		       uint32_t n);
 
 /* Copies the WAL into buf */
 int VfsDiskSnapshotWal(sqlite3_vfs *vfs,
 		       const char *path,
-		       struct dqlite_buffer *buf);
+		       struct cowsql_buffer *buf);
 
 /* `mmap` the database into buf. */
 int VfsDiskSnapshotDb(sqlite3_vfs *vfs,
 		      const char *path,
-		      struct dqlite_buffer *buf);
+		      struct cowsql_buffer *buf);
 
 /* Restore a database snapshot. */
 int VfsRestore(sqlite3_vfs *vfs,

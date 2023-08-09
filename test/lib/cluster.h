@@ -1,7 +1,7 @@
 /**
  * Helpers to setup a raft cluster in test fixtures.
  *
- * Each raft instance will use its own dqlite FSM, which in turn will be created
+ * Each raft instance will use its own cowsql FSM, which in turn will be created
  * using its own config, registry and logger.
  *
  * The fixture will also register a VFS and a SQLite replication object for each

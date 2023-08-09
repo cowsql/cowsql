@@ -8,7 +8,7 @@
 
 #include "../../src/client/protocol.h"
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include "endpoint.h"
 #include "munit.h"
@@ -20,7 +20,7 @@ struct test_server
 	unsigned id;         /* Server ID. */
 	char address[8];     /* Server address. */
 	char *dir;           /* Data directory. */
-	dqlite_node *dqlite; /* Dqlite instance. */
+	cowsql_node *cowsql; /* Cowsql instance. */
 	bool role_management;
 	struct client_proto client;    /* Connected client. */
 	struct test_server *others[5]; /* Other servers, by ID-1. */

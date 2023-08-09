@@ -264,7 +264,7 @@ TEST_CASE(idx, not_found, NULL)
 	munit_assert_int(err, ==, 0);
 
 	err = test_registry_idx(registry, "y", &i);
-	munit_assert_int(err, ==, DQLITE_NOTFOUND);
+	munit_assert_int(err, ==, COWSQL_NOTFOUND);
 
 	return MUNIT_OK;
 }
@@ -309,7 +309,7 @@ TEST_CASE(del, twice, NULL)
 	munit_assert_int(err, ==, 0);
 
 	err = test_registry_del(registry, &item_clone);
-	munit_assert_int(err, ==, DQLITE_NOTFOUND);
+	munit_assert_int(err, ==, COWSQL_NOTFOUND);
 
 	return MUNIT_OK;
 }
@@ -337,7 +337,7 @@ TEST_CASE(del, twice_middle, NULL)
 	munit_assert_int(err, ==, 0);
 
 	err = test_registry_del(registry, &item1_clone);
-	munit_assert_int(err, ==, DQLITE_NOTFOUND);
+	munit_assert_int(err, ==, COWSQL_NOTFOUND);
 
 	return MUNIT_OK;
 }
@@ -355,7 +355,7 @@ TEST_CASE(del, out_of_bounds, NULL)
 
 	err = test_registry_del(registry, &item);
 
-	munit_assert_int(err, ==, DQLITE_NOTFOUND);
+	munit_assert_int(err, ==, COWSQL_NOTFOUND);
 
 	return MUNIT_OK;
 }

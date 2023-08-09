@@ -3,7 +3,7 @@
 
 #include <sqlite3.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "./lib/assert.h"
 
@@ -29,7 +29,7 @@
 static unsigned serial = 1;
 
 int config__init(struct config *c,
-		 dqlite_node_id id,
+		 cowsql_node_id id,
 		 const char *address,
 		 const char *dir)
 {
@@ -37,13 +37,13 @@ int config__init(struct config *c,
 	c->id = id;
 	c->address = sqlite3_malloc((int)strlen(address) + 1);
 	if (c->address == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	strcpy(c->address, address);
 	c->heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
 	c->page_size = DEFAULT_PAGE_SIZE;
 	c->checkpoint_threshold = DEFAULT_CHECKPOINT_THRESHOLD;
-	rv = snprintf(c->name, sizeof c->name, "dqlite-%u", serial);
+	rv = snprintf(c->name, sizeof c->name, "cowsql-%u", serial);
 	assert(rv < (int)(sizeof c->name));
 	c->logger.data = NULL;
 	c->logger.emit = loggerDefaultEmit;

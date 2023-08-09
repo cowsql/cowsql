@@ -82,8 +82,8 @@ static void connect_work_cb(uv_work_t *work)
 		goto err;
 	}
 
-	/* Send the initial dqlite protocol handshake. */
-	protocol = ByteFlipLe64(DQLITE_PROTOCOL_VERSION);
+	/* Send the initial cowsql protocol handshake. */
+	protocol = ByteFlipLe64(COWSQL_PROTOCOL_VERSION);
 	rv = (int)write(r->fd, &protocol, sizeof protocol);
 	if (rv != sizeof protocol) {
 		tracef("write failed");
@@ -91,7 +91,7 @@ static void connect_work_cb(uv_work_t *work)
 		goto err_after_connect;
 	}
 
-	/* Send a CONNECT dqlite protocol command, which will transfer control
+	/* Send a CONNECT cowsql protocol command, which will transfer control
 	 * to the underlying raft UV backend. */
 	request.id = i->id;
 	request.address = i->address;
@@ -99,7 +99,7 @@ static void connect_work_cb(uv_work_t *work)
 	n1 = message__sizeof(&message);
 	n2 = request_connect__sizeof(&request);
 
-	message.type = DQLITE_REQUEST_CONNECT;
+	message.type = COWSQL_REQUEST_CONNECT;
 	message.words = (uint32_t)(n2 / 8);
 
 	n = n1 + n2;
@@ -174,7 +174,7 @@ static int impl_connect(struct raft_uv_transport *transport,
 	r = sqlite3_malloc(sizeof *r);
 	if (r == NULL) {
 		tracef("malloc failed");
-		rv = DQLITE_NOMEM;
+		rv = COWSQL_NOMEM;
 		goto err;
 	}
 
@@ -242,7 +242,7 @@ int raftProxyInit(struct raft_uv_transport *transport, struct uv_loop_s *loop)
 	tracef("raft proxy init");
 	struct impl *i = sqlite3_malloc(sizeof *i);
 	if (i == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	i->loop = loop;
 	i->connect.f = transportDefaultConnect;

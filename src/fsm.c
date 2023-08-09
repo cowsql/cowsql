@@ -43,13 +43,13 @@ static int add_pending_pages(struct fsm *f,
 	    f->pending.page_numbers, n * sizeof *f->pending.page_numbers);
 
 	if (f->pending.page_numbers == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	f->pending.pages = sqlite3_realloc64(f->pending.pages, n * page_size);
 
 	if (f->pending.pages == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	for (i = 0; i < n_pages; i++) {
@@ -239,7 +239,7 @@ static int apply_frames(struct fsm *f, const struct command_frames *c)
 			if (rv != 0) {
 				tracef("malloc");
 				sqlite3_free(page_numbers);
-				return DQLITE_NOMEM;
+				return COWSQL_NOMEM;
 			}
 			rv =
 			    VfsApply(vfs, db->path, f->pending.n_pages,
@@ -270,7 +270,7 @@ static int apply_frames(struct fsm *f, const struct command_frames *c)
 		if (rv != 0) {
 			tracef("add pending pages failed %d", rv);
 			sqlite3_free(page_numbers);
-			return DQLITE_NOMEM;
+			return COWSQL_NOMEM;
 		}
 	}
 
@@ -389,7 +389,7 @@ static int encodeDatabase(struct db *db,
 	uint32_t database_size = 0;
 	uint8_t *page;
 	void *cursor;
-	struct dqlite_buffer *bufs = (struct dqlite_buffer *)r_bufs;
+	struct cowsql_buffer *bufs = (struct cowsql_buffer *)r_bufs;
 	int rv;
 
 	header.filename = db->filename;
@@ -719,7 +719,7 @@ int fsm__init(struct raft_fsm *fsm,
 	struct fsm *f = raft_malloc(sizeof *f);
 
 	if (f == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	f->logger = &config->logger;
@@ -753,7 +753,7 @@ void fsm__close(struct raft_fsm *fsm)
 static int encodeDiskDatabaseSync(struct db *db, struct raft_buffer *r_buf)
 {
 	sqlite3_vfs *vfs;
-	struct dqlite_buffer *buf = (struct dqlite_buffer *)r_buf;
+	struct cowsql_buffer *buf = (struct cowsql_buffer *)r_buf;
 	int rv;
 
 	vfs = sqlite3_vfs_find(db->config->name);
@@ -777,7 +777,7 @@ static int encodeDiskDatabaseAsync(struct db *db,
 	struct snapshotDatabase header;
 	sqlite3_vfs *vfs;
 	void *cursor;
-	struct dqlite_buffer *bufs = (struct dqlite_buffer *)r_bufs;
+	struct cowsql_buffer *bufs = (struct cowsql_buffer *)r_bufs;
 	int rv;
 
 	assert(n == 3);
@@ -1143,7 +1143,7 @@ int fsm__init_disk(struct raft_fsm *fsm,
 	struct fsm *f = raft_malloc(sizeof *f);
 
 	if (f == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	f->logger = &config->logger;

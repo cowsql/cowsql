@@ -4,17 +4,17 @@
  *
  *****************************************************************************/
 
-#ifndef DQLITE_METRICS_H
-#define DQLITE_METRICS_H
+#ifndef COWSQL_METRICS_H
+#define COWSQL_METRICS_H
 
 #include <stdint.h>
 
-struct dqlite__metrics
+struct cowsql__metrics
 {
 	uint64_t requests; /* Total number of requests served. */
 	uint64_t duration; /* Total time spent to server requests. */
 };
 
-void dqlite__metrics_init(struct dqlite__metrics *m);
+void cowsql__metrics_init(struct cowsql__metrics *m);
 
-#endif /* DQLITE_METRICS_H */
+#endif /* COWSQL_METRICS_H */

@@ -6,7 +6,7 @@
 #include <sqlite3.h>
 #include <uv.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "./lib/assert.h"
 
@@ -14,17 +14,17 @@
 
 /* Fallback message returned when failing to allocate the error message
  * itself. */
-static char *dqlite__error_oom_msg =
+static char *cowsql__error_oom_msg =
     "error message unavailable (out of memory)";
 
-void dqlite__error_init(dqlite__error *e)
+void cowsql__error_init(cowsql__error *e)
 {
 	*e = NULL;
 }
 
-void dqlite__error_close(dqlite__error *e)
+void cowsql__error_close(cowsql__error *e)
 {
-	if (*e != NULL && *e != dqlite__error_oom_msg) {
+	if (*e != NULL && *e != cowsql__error_oom_msg) {
 		sqlite3_free(*e);
 	}
 }
@@ -33,7 +33,7 @@ void dqlite__error_close(dqlite__error *e)
  * parameters.
  *
  * Any previously set error message will be cleared. */
-static void dqlite__error_vprintf(dqlite__error *e,
+static void cowsql__error_vprintf(cowsql__error *e,
 				  const char *fmt,
 				  va_list args)
 {
@@ -41,7 +41,7 @@ static void dqlite__error_vprintf(dqlite__error *e,
 
 	/* If a previous error was set (other than the hard-coded OOM fallback
 	 * fallback), let's free it. */
-	if (*e != NULL && *e != dqlite__error_oom_msg) {
+	if (*e != NULL && *e != cowsql__error_oom_msg) {
 		sqlite3_free(*e);
 	}
 
@@ -49,80 +49,80 @@ static void dqlite__error_vprintf(dqlite__error *e,
 	 * OOM fallback message. */
 	*e = sqlite3_vmprintf(fmt, args);
 	if (*e == NULL) {
-		*e = dqlite__error_oom_msg;
+		*e = cowsql__error_oom_msg;
 	}
 }
 
-void dqlite__error_printf(dqlite__error *e, const char *fmt, ...)
+void cowsql__error_printf(cowsql__error *e, const char *fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
-	dqlite__error_vprintf(e, fmt, args);
+	cowsql__error_vprintf(e, fmt, args);
 	va_end(args);
 }
 
-static void dqlite__error_vwrapf(dqlite__error *e,
+static void cowsql__error_vwrapf(cowsql__error *e,
 				 const char *cause,
 				 const char *fmt,
 				 va_list args)
 {
-	dqlite__error tmp;
+	cowsql__error tmp;
 	char *msg;
 
 	/* First, print the format and arguments, using a temporary error. */
-	dqlite__error_init(&tmp);
+	cowsql__error_init(&tmp);
 
-	dqlite__error_vprintf(&tmp, fmt, args);
+	cowsql__error_vprintf(&tmp, fmt, args);
 
 	if (cause == NULL) {
 		/* Special case the cause error being empty. */
-		dqlite__error_printf(e, "%s: (null)", tmp);
+		cowsql__error_printf(e, "%s: (null)", tmp);
 	} else if (cause == *e) {
 		/* When the error is wrapping itself, we need to make a copy */
-		dqlite__error_copy(e, &msg);
-		dqlite__error_printf(e, "%s: %s", tmp, msg);
+		cowsql__error_copy(e, &msg);
+		cowsql__error_printf(e, "%s: %s", tmp, msg);
 		sqlite3_free(msg);
 	} else {
-		dqlite__error_printf(e, "%s: %s", tmp, cause);
+		cowsql__error_printf(e, "%s: %s", tmp, cause);
 	}
 
-	dqlite__error_close(&tmp);
+	cowsql__error_close(&tmp);
 }
 
-void dqlite__error_wrapf(dqlite__error *e,
-			 const dqlite__error *cause,
+void cowsql__error_wrapf(cowsql__error *e,
+			 const cowsql__error *cause,
 			 const char *fmt,
 			 ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
-	dqlite__error_vwrapf(e, (const char *)(*cause), fmt, args);
+	cowsql__error_vwrapf(e, (const char *)(*cause), fmt, args);
 	va_end(args);
 }
 
-void dqlite__error_oom(dqlite__error *e, const char *msg, ...)
+void cowsql__error_oom(cowsql__error *e, const char *msg, ...)
 {
 	va_list args;
 
 	va_start(args, msg);
-	dqlite__error_vwrapf(e, "out of memory", msg, args);
+	cowsql__error_vwrapf(e, "out of memory", msg, args);
 	va_end(args);
 }
 
-void dqlite__error_sys(dqlite__error *e, const char *msg)
+void cowsql__error_sys(cowsql__error *e, const char *msg)
 {
-	dqlite__error_printf(e, "%s: %s", msg, strerror(errno));
+	cowsql__error_printf(e, "%s: %s", msg, strerror(errno));
 }
 
-void dqlite__error_uv(dqlite__error *e, int err, const char *msg)
+void cowsql__error_uv(cowsql__error *e, int err, const char *msg)
 {
-	dqlite__error_printf(e, "%s: %s (%s)", msg, uv_strerror(err),
+	cowsql__error_printf(e, "%s: %s (%s)", msg, uv_strerror(err),
 			     uv_err_name(err));
 }
 
-int dqlite__error_copy(dqlite__error *e, char **msg)
+int cowsql__error_copy(cowsql__error *e, char **msg)
 {
 	char *copy;
 	size_t len;
@@ -133,7 +133,7 @@ int dqlite__error_copy(dqlite__error *e, char **msg)
 	/* Trying to copy an empty error message is an error. */
 	if (*e == NULL) {
 		*msg = NULL;
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 
 	len = strlen(*e) + 1;
@@ -141,7 +141,7 @@ int dqlite__error_copy(dqlite__error *e, char **msg)
 	copy = sqlite3_malloc((int)(len * sizeof *copy));
 	if (copy == NULL) {
 		*msg = NULL;
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	memcpy(copy, *e, len);
@@ -151,12 +151,12 @@ int dqlite__error_copy(dqlite__error *e, char **msg)
 	return 0;
 }
 
-int dqlite__error_is_null(dqlite__error *e)
+int cowsql__error_is_null(cowsql__error *e)
 {
 	return *e == NULL;
 }
 
-int dqlite__error_is_disconnect(dqlite__error *e)
+int cowsql__error_is_disconnect(cowsql__error *e)
 {
 	if (*e == NULL)
 		return 0;

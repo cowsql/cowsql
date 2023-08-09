@@ -32,16 +32,16 @@ static int bind_one(sqlite3_stmt *stmt, int n, struct value *value)
 			rc = sqlite3_bind_text(stmt, n, value->text, -1,
 					       SQLITE_TRANSIENT);
 			break;
-		case DQLITE_ISO8601:
+		case COWSQL_ISO8601:
 			rc = sqlite3_bind_text(stmt, n, value->text, -1,
 					       SQLITE_TRANSIENT);
 			break;
-		case DQLITE_BOOLEAN:
+		case COWSQL_BOOLEAN:
 			rc = sqlite3_bind_int64(stmt, n,
 						value->boolean == 0 ? 0 : 1);
 			break;
 		default:
-			rc = DQLITE_PROTO;
+			rc = COWSQL_PROTO;
 			break;
 	}
 

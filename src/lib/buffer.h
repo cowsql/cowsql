@@ -14,7 +14,7 @@
 
 #include <unistd.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 struct buffer
 {
@@ -27,12 +27,12 @@ struct buffer
 /**
  * Initialize the buffer. It will initially have 1 memory  page.
  */
-DQLITE_VISIBLE_TO_TESTS int buffer__init(struct buffer *b);
+COWSQL_VISIBLE_TO_TESTS int buffer__init(struct buffer *b);
 
 /**
  * Release the memory of the buffer.
  */
-DQLITE_VISIBLE_TO_TESTS void buffer__close(struct buffer *b);
+COWSQL_VISIBLE_TO_TESTS void buffer__close(struct buffer *b);
 
 /**
  * Return a write cursor pointing to the next byte to write, ensuring that the
@@ -40,21 +40,21 @@ DQLITE_VISIBLE_TO_TESTS void buffer__close(struct buffer *b);
  *
  * Return #NULL in case of out-of-memory errors.
  */
-DQLITE_VISIBLE_TO_TESTS void *buffer__advance(struct buffer *b, size_t size);
+COWSQL_VISIBLE_TO_TESTS void *buffer__advance(struct buffer *b, size_t size);
 
 /**
  * Return the offset of next byte to write.
  */
-DQLITE_VISIBLE_TO_TESTS size_t buffer__offset(struct buffer *b);
+COWSQL_VISIBLE_TO_TESTS size_t buffer__offset(struct buffer *b);
 
 /**
  * Return a write cursor pointing to the @offset'th byte of the buffer.
  */
-DQLITE_VISIBLE_TO_TESTS void *buffer__cursor(struct buffer *b, size_t offset);
+COWSQL_VISIBLE_TO_TESTS void *buffer__cursor(struct buffer *b, size_t offset);
 
 /**
  * Reset the write offset of the buffer.
  */
-DQLITE_VISIBLE_TO_TESTS void buffer__reset(struct buffer *b);
+COWSQL_VISIBLE_TO_TESTS void buffer__reset(struct buffer *b);
 
 #endif /* LIB_BUFFER_H_ */

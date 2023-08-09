@@ -66,7 +66,7 @@ static void makeValueOwned(struct value *val)
 		case SQLITE_TEXT:
 			val->text = strdupChecked(val->text);
 			break;
-		case DQLITE_ISO8601:
+		case COWSQL_ISO8601:
 			val->iso8601 = strdupChecked(val->iso8601);
 			break;
 		case SQLITE_BLOB:
@@ -88,7 +88,7 @@ static void freeOwnedValue(struct value val)
 		case SQLITE_TEXT:
 			free((char *)val.text);
 			break;
-		case DQLITE_ISO8601:
+		case COWSQL_ISO8601:
 			free((char *)val.iso8601);
 			break;
 		case SQLITE_BLOB:
@@ -101,7 +101,7 @@ static void freeOwnedValue(struct value val)
 static int peekUint64(struct cursor cursor, uint64_t *val)
 {
 	if (cursor.cap < 8) {
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	}
 	*val = ByteFlipLe64(*(uint64_t *)cursor.p);
 	return 0;
@@ -278,14 +278,14 @@ static int handleFailure(struct client_proto *c)
 	rv = response_failure__decode(&cursor, &failure);
 	if (rv != 0) {
 		tracef("decode as failure failed rv:%d", rv);
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	}
 	c->errcode = failure.code;
 	if (c->errmsg != NULL) {
 		free(c->errmsg);
 	}
 	c->errmsg = strdupChecked(failure.message);
-	return DQLITE_CLIENT_PROTO_RECEIVED_FAILURE;
+	return COWSQL_CLIENT_PROTO_RECEIVED_FAILURE;
 }
 
 void clientContextMillis(struct client_context *context, long millis)
@@ -308,7 +308,7 @@ int clientOpen(struct client_proto *c, const char *addr, uint64_t server_id)
 	rv = c->connect(c->connect_arg, addr, &c->fd);
 	if (rv != 0) {
 		c->fd = -1;
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	}
 	c->server_id = server_id;
 
@@ -350,14 +350,14 @@ int clientSendHandshake(struct client_proto *c, struct client_context *context)
 	ssize_t rv;
 
 	tracef("client send handshake");
-	protocol = ByteFlipLe64(DQLITE_PROTOCOL_VERSION);
+	protocol = ByteFlipLe64(COWSQL_PROTOCOL_VERSION);
 
 	rv = doWrite(c->fd, &protocol, sizeof protocol, context);
 	if (rv < 0) {
 		tracef("client send handshake failed %zd", rv);
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	} else if ((size_t)rv < sizeof protocol) {
-		return DQLITE_CLIENT_PROTO_SHORT;
+		return COWSQL_CLIENT_PROTO_SHORT;
 	}
 
 	return 0;
@@ -383,9 +383,9 @@ static int writeMessage(struct client_proto *c,
 	rv = doWrite(c->fd, buffer__cursor(&c->write, 0), n, context);
 	if (rv < 0) {
 		tracef("request write failed rv:%zd", rv);
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	} else if ((size_t)rv < n) {
-		return DQLITE_CLIENT_PROTO_SHORT;
+		return COWSQL_CLIENT_PROTO_SHORT;
 	}
 	return 0;
 }
@@ -414,7 +414,7 @@ static int writeMessage(struct client_proto *c,
 		int _rv;                                                      \
 		BUFFER_REQUEST(LOWER, UPPER);                                 \
 		_rv =                                                         \
-		    writeMessage(c, DQLITE_REQUEST_##UPPER, SCHEMA, context); \
+		    writeMessage(c, COWSQL_REQUEST_##UPPER, SCHEMA, context); \
 		if (_rv != 0) {                                               \
 			return _rv;                                           \
 		}                                                             \
@@ -438,9 +438,9 @@ static int readMessage(struct client_proto *c,
 	}
 	rv = doRead(c->fd, p, n, context);
 	if (rv < 0) {
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	} else if (rv < (ssize_t)n) {
-		return DQLITE_CLIENT_PROTO_SHORT;
+		return COWSQL_CLIENT_PROTO_SHORT;
 	}
 
 	cursor.p = p;
@@ -448,7 +448,7 @@ static int readMessage(struct client_proto *c,
 	rv = message__decode(&cursor, &message);
 	if (rv != 0) {
 		tracef("message decode failed rv:%zd", rv);
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	}
 
 	buffer__reset(&c->read);
@@ -459,9 +459,9 @@ static int readMessage(struct client_proto *c,
 	}
 	rv = doRead(c->fd, p, n, context);
 	if (rv < 0) {
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	} else if (rv < (ssize_t)n) {
-		return DQLITE_CLIENT_PROTO_SHORT;
+		return COWSQL_CLIENT_PROTO_SHORT;
 	}
 
 	*type = message.type;
@@ -477,18 +477,18 @@ static int readMessage(struct client_proto *c,
 		if (_rv != 0) {                                       \
 			return _rv;                                   \
 		}                                                     \
-		if (_type == DQLITE_RESPONSE_FAILURE &&               \
-		    _type != DQLITE_RESPONSE_##UPPER) {               \
+		if (_type == COWSQL_RESPONSE_FAILURE &&               \
+		    _type != COWSQL_RESPONSE_##UPPER) {               \
 			_rv = handleFailure(c);                       \
 			return _rv;                                   \
-		} else if (_type != DQLITE_RESPONSE_##UPPER) {        \
-			return DQLITE_CLIENT_PROTO_ERROR;             \
+		} else if (_type != COWSQL_RESPONSE_##UPPER) {        \
+			return COWSQL_CLIENT_PROTO_ERROR;             \
 		}                                                     \
 		cursor.p = buffer__cursor(&c->read, 0);               \
 		cursor.cap = buffer__offset(&c->read);                \
 		_rv = response_##LOWER##__decode(&cursor, &response); \
 		if (_rv != 0) {                                       \
-			return DQLITE_CLIENT_PROTO_ERROR;             \
+			return COWSQL_CLIENT_PROTO_ERROR;             \
 		}                                                     \
 	}
 
@@ -544,7 +544,7 @@ int clientSendPrepare(struct client_proto *c,
 	struct request_prepare request;
 	request.db_id = c->db_id;
 	request.sql = sql;
-	REQUEST(prepare, PREPARE, DQLITE_PREPARE_STMT_SCHEMA_V1);
+	REQUEST(prepare, PREPARE, COWSQL_PREPARE_STMT_SCHEMA_V1);
 	return 0;
 }
 
@@ -582,12 +582,12 @@ static int bufferParams(struct client_proto *c,
 	}
 	rv = tuple_encoder__init(&tup, n_params, TUPLE__PARAMS32, &c->write);
 	if (rv != 0) {
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	}
 	for (i = 0; i < n_params; ++i) {
 		rv = tuple_encoder__next(&tup, &params[i]);
 		if (rv != 0) {
-			return DQLITE_CLIENT_PROTO_ERROR;
+			return COWSQL_CLIENT_PROTO_ERROR;
 		}
 	}
 	return 0;
@@ -611,7 +611,7 @@ int clientSendExec(struct client_proto *c,
 	if (rv != 0) {
 		return rv;
 	}
-	rv = writeMessage(c, DQLITE_REQUEST_EXEC, 1, context);
+	rv = writeMessage(c, COWSQL_REQUEST_EXEC, 1, context);
 	return rv;
 }
 
@@ -633,7 +633,7 @@ int clientSendExecSQL(struct client_proto *c,
 	if (rv != 0) {
 		return rv;
 	}
-	rv = writeMessage(c, DQLITE_REQUEST_EXEC_SQL, 1, context);
+	rv = writeMessage(c, COWSQL_REQUEST_EXEC_SQL, 1, context);
 	return rv;
 }
 
@@ -672,7 +672,7 @@ int clientSendQuery(struct client_proto *c,
 	if (rv != 0) {
 		return rv;
 	}
-	rv = writeMessage(c, DQLITE_REQUEST_QUERY, 1, context);
+	rv = writeMessage(c, COWSQL_REQUEST_QUERY, 1, context);
 	return rv;
 }
 
@@ -694,7 +694,7 @@ int clientSendQuerySQL(struct client_proto *c,
 	if (rv != 0) {
 		return rv;
 	}
-	rv = writeMessage(c, DQLITE_REQUEST_QUERY_SQL, 1, context);
+	rv = writeMessage(c, COWSQL_REQUEST_QUERY_SQL, 1, context);
 	return rv;
 }
 
@@ -720,18 +720,18 @@ int clientRecvRows(struct client_proto *c,
 	if (rv != 0) {
 		return rv;
 	}
-	if (type == DQLITE_RESPONSE_FAILURE) {
+	if (type == COWSQL_RESPONSE_FAILURE) {
 		rv = handleFailure(c);
 		return rv;
-	} else if (type != DQLITE_RESPONSE_ROWS) {
-		return DQLITE_CLIENT_PROTO_ERROR;
+	} else if (type != COWSQL_RESPONSE_ROWS) {
+		return COWSQL_CLIENT_PROTO_ERROR;
 	}
 
 	cursor.p = buffer__cursor(&c->read, 0);
 	cursor.cap = buffer__offset(&c->read);
 	rv = uint64__decode(&cursor, &column_count);
 	if (rv != 0) {
-		return DQLITE_CLIENT_PROTO_ERROR;
+		return COWSQL_CLIENT_PROTO_ERROR;
 	}
 	rows->column_count = (unsigned)column_count;
 	assert((uint64_t)rows->column_count == column_count);
@@ -741,7 +741,7 @@ int clientRecvRows(struct client_proto *c,
 	for (i = 0; i < rows->column_count; ++i) {
 		rv = text__decode(&cursor, &raw);
 		if (rv != 0) {
-			rv = DQLITE_CLIENT_PROTO_ERROR;
+			rv = COWSQL_CLIENT_PROTO_ERROR;
 			goto err_after_alloc_column_names;
 		}
 		rows->column_names[i] = strdupChecked(raw);
@@ -754,8 +754,8 @@ int clientRecvRows(struct client_proto *c,
 		if (rv != 0) {
 			goto err_after_alloc_column_names;
 		}
-		if (eof == DQLITE_RESPONSE_ROWS_DONE ||
-		    eof == DQLITE_RESPONSE_ROWS_PART) {
+		if (eof == COWSQL_RESPONSE_ROWS_DONE ||
+		    eof == COWSQL_RESPONSE_ROWS_PART) {
 			break;
 		}
 
@@ -770,13 +770,13 @@ int clientRecvRows(struct client_proto *c,
 		rv = tuple_decoder__init(&tup, rows->column_count, TUPLE__ROW,
 					 &cursor);
 		if (rv != 0) {
-			rv = DQLITE_CLIENT_PROTO_ERROR;
+			rv = COWSQL_CLIENT_PROTO_ERROR;
 			goto err_after_alloc_row_values;
 		}
 		for (; i < rows->column_count; ++i) {
 			rv = tuple_decoder__next(&tup, &row->values[i]);
 			if (rv != 0) {
-				rv = DQLITE_CLIENT_PROTO_ERROR;
+				rv = COWSQL_CLIENT_PROTO_ERROR;
 				goto err_after_alloc_row_values;
 			}
 			makeValueOwned(&row->values[i]);
@@ -790,10 +790,10 @@ int clientRecvRows(struct client_proto *c,
 		last = row;
 	}
 
-	assert(eof == DQLITE_RESPONSE_ROWS_DONE ||
-	       eof == DQLITE_RESPONSE_ROWS_PART);
+	assert(eof == COWSQL_RESPONSE_ROWS_DONE ||
+	       eof == COWSQL_RESPONSE_ROWS_PART);
 	if (done != NULL) {
-		*done = eof == DQLITE_RESPONSE_ROWS_DONE;
+		*done = eof == COWSQL_RESPONSE_ROWS_DONE;
 	}
 	return 0;
 
@@ -877,8 +877,8 @@ int clientSendAssign(struct client_proto *c,
 		     struct client_context *context)
 {
 	tracef("client send assign id %" PRIu64 " role %d", id, role);
-	assert(role == DQLITE_VOTER || role == DQLITE_STANDBY ||
-	       role == DQLITE_SPARE);
+	assert(role == COWSQL_VOTER || role == COWSQL_STANDBY ||
+	       role == COWSQL_SPARE);
 	struct request_assign request;
 	request.id = id;
 	request.role = (uint64_t)role;
@@ -912,7 +912,7 @@ int clientSendCluster(struct client_proto *c, struct client_context *context)
 {
 	tracef("client send cluster");
 	struct request_cluster request;
-	request.format = DQLITE_REQUEST_CLUSTER_FORMAT_V1;
+	request.format = COWSQL_REQUEST_CLUSTER_FORMAT_V1;
 	REQUEST(cluster, CLUSTER, 0);
 	return 0;
 }
@@ -932,7 +932,7 @@ int clientSendDescribe(struct client_proto *c, struct client_context *context)
 {
 	tracef("client send describe");
 	struct request_describe request;
-	request.format = DQLITE_REQUEST_DESCRIBE_FORMAT_V0;
+	request.format = COWSQL_REQUEST_DESCRIBE_FORMAT_V0;
 	REQUEST(describe, DESCRIBE, 0);
 	return 0;
 }
@@ -1084,7 +1084,7 @@ int clientRecvFiles(struct client_proto *c,
 		}
 		if (cursor.cap != fs[i].size) {
 			free(fs[i].name);
-			rv = DQLITE_PARSE;
+			rv = COWSQL_PARSE;
 			goto err_after_alloc_fs;
 		}
 		z = (size_t)fs[i].size;

@@ -7,9 +7,9 @@ TEST_SUITE(endian);
 
 static uint16_t vfsFlip16(uint16_t v)
 {
-#if defined(DQLITE_BIG_ENDIAN)
+#if defined(COWSQL_BIG_ENDIAN)
 	return v;
-#elif defined(DQLITE_LITTLE_ENDIAN) && defined(DQLITE_HAVE_BSWAP)
+#elif defined(COWSQL_LITTLE_ENDIAN) && defined(COWSQL_HAVE_BSWAP)
 	defined(__GNUC__) && __GNUC__ >= 4 &&
 	    __GNUC_MINOR__ >= 8 return __builtin_bswap16(v);
 #else
@@ -27,9 +27,9 @@ static uint16_t vfsFlip16(uint16_t v)
 
 static uint32_t vfsFlip32(uint32_t v)
 {
-#if defined(DQLITE_BIG_ENDIAN)
+#if defined(COWSQL_BIG_ENDIAN)
 	return v;
-#elif defined(DQLITE_LITTLE_ENDIAN) && defined(DQLITE_HAVE_BSWAP)
+#elif defined(COWSQL_LITTLE_ENDIAN) && defined(COWSQL_HAVE_BSWAP)
 	return __builtin_bswap32(v);
 #else
 	union {

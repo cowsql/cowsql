@@ -13,7 +13,7 @@
 
 #include <sqlite3.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "lib/assert.h"
 #include "lib/byte.h"
@@ -29,9 +29,9 @@
 #endif
 
 /* Byte order */
-#if defined(DQLITE_LITTLE_ENDIAN)
+#if defined(COWSQL_LITTLE_ENDIAN)
 #define VFS__BIGENDIAN 0
-#elif defined(DQLITE_BIG_ENDIAN)
+#elif defined(COWSQL_BIG_ENDIAN)
 #define VFS__BIGENDIAN 1
 #else
 const int vfsOne = 1;
@@ -322,7 +322,7 @@ static void vfsDatabaseDestroy(struct vfsDatabase *d)
  * and incorrect behavior.
  * ==END COPY==
  */
-DQLITE_VISIBLE_TO_TESTS unsigned dq_sqlite_pending_byte = 0x40000000;
+COWSQL_VISIBLE_TO_TESTS unsigned dq_sqlite_pending_byte = 0x40000000;
 
 /* Get a page from the given database, possibly creating a new one. */
 static int vfsDatabaseGetPage(struct vfsDatabase *d,
@@ -642,7 +642,7 @@ struct vfsFile
 	sqlite3_file *db;             /* For on-disk DB files, actual VFS. */
 };
 
-/* Custom dqlite VFS. Contains pointers to all databases that were created. */
+/* Custom cowsql VFS. Contains pointers to all databases that were created. */
 struct vfs
 {
 	struct vfsDatabase **databases; /* Database objects */
@@ -1151,7 +1151,7 @@ static size_t vfsDatabaseFileSize(struct vfsDatabase *d)
 		size =
 		    (uint64_t)d->n_pages * (uint64_t)vfsDatabaseGetPageSize(d);
 	}
-	/* TODO dqlite is limited to a max database size of SIZE_MAX */
+	/* TODO cowsql is limited to a max database size of SIZE_MAX */
 	assert(size <= SIZE_MAX);
 	return (size_t)size;
 }
@@ -1167,7 +1167,7 @@ static size_t vfsWalFileSize(struct vfsWal *w)
 		size += (uint64_t)w->n_frames *
 			(uint64_t)(FORMAT__WAL_FRAME_HDR_SIZE + page_size);
 	}
-	/* TODO dqlite is limited to a max database size of SIZE_MAX */
+	/* TODO cowsql is limited to a max database size of SIZE_MAX */
 	assert(size <= SIZE_MAX);
 	return (size_t)size;
 }
@@ -1337,7 +1337,7 @@ static void vfsFrameFill(struct vfsFrame *f,
  * order to "rewind" the mxFrame and szPage fields of the WAL index header back
  * to when the write transaction started, effectively "shadowing" the
  * transaction, which will be replicated asynchronously. Second, when the
- * replication actually succeeds and dqlite_vfs_apply() is called on the VFS
+ * replication actually succeeds and cowsql_vfs_apply() is called on the VFS
  * that originated the transaction, in order to make the transaction visible.
  *
  * Note that the hash table contained in the WAL index does not get modified,
@@ -1345,7 +1345,7 @@ static void vfsFrameFill(struct vfsFrame *f,
  * entries for the frames committed by the transaction. That's safe because
  * mxFrame will make clients ignore those hash table entries. However it means
  * that in case the replication is not actually successful and
- * dqlite_vfs_abort() is called the WAL index must be invalidated.
+ * cowsql_vfs_abort() is called the WAL index must be invalidated.
  **/
 static void vfsAmendWalIndexHeader(struct vfsDatabase *d)
 {
@@ -2066,7 +2066,7 @@ int VfsInit(struct sqlite3_vfs *vfs, const char *name)
 
 	vfs->pAppData = vfsCreate();
 	if (vfs->pAppData == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	vfs->xOpen = vfsOpen;
@@ -2095,7 +2095,7 @@ void VfsClose(struct sqlite3_vfs *vfs)
 	sqlite3_free(v);
 }
 
-static int vfsWalPoll(struct vfsWal *w, dqlite_vfs_frame **frames, unsigned *n)
+static int vfsWalPoll(struct vfsWal *w, cowsql_vfs_frame **frames, unsigned *n)
 {
 	struct vfsFrame *last;
 	uint32_t commit;
@@ -2119,12 +2119,12 @@ static int vfsWalPoll(struct vfsWal *w, dqlite_vfs_frame **frames, unsigned *n)
 
 	*frames = sqlite3_malloc64(sizeof **frames * w->n_tx);
 	if (*frames == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	*n = w->n_tx;
 
 	for (i = 0; i < w->n_tx; i++) {
-		dqlite_vfs_frame *frame = &(*frames)[i];
+		cowsql_vfs_frame *frame = &(*frames)[i];
 		uint32_t page_number = vfsFrameGetPageNumber(w->tx[i]);
 		frame->data = w->tx[i]->page;
 		frame->page_number = page_number;
@@ -2141,7 +2141,7 @@ static int vfsWalPoll(struct vfsWal *w, dqlite_vfs_frame **frames, unsigned *n)
 
 int VfsPoll(sqlite3_vfs *vfs,
 	    const char *filename,
-	    dqlite_vfs_frame **frames,
+	    cowsql_vfs_frame **frames,
 	    unsigned *n)
 {
 	tracef("vfs poll filename:%s", filename);
@@ -2156,7 +2156,7 @@ int VfsPoll(sqlite3_vfs *vfs,
 
 	if (database == NULL) {
 		tracef("not found");
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 
 	shm = &database->shm;
@@ -2298,7 +2298,7 @@ oom_after_frames_alloc:
 		vfsFrameDestroy(frames[w->n_frames + j]);
 	}
 oom:
-	return DQLITE_NOMEM;
+	return COWSQL_NOMEM;
 }
 
 /* Write the header of a brand new WAL file image. */
@@ -2317,7 +2317,7 @@ static void vfsWalStartHeader(struct vfsWal *w, uint32_t page_size)
 	 * bit to match the host's native byte order, so checksums are a bit
 	 * more efficient.
 	 *
-	 * In Dqlite the WAL file image is always generated at run time on the
+	 * In Cowsql the WAL file image is always generated at run time on the
 	 * host, so we can always use the native byte order. */
 	BytePutBe32(VFS__WAL_MAGIC | VFS__BIGENDIAN, &w->hdr[0]);
 	BytePutBe32(VFS__WAL_VERSION, &w->hdr[4]);
@@ -2389,7 +2389,7 @@ int VfsApply(sqlite3_vfs *vfs,
 	}
 
 	/* If a write lock is held it means that this is the VFS that orginated
-	 * this commit and on which dqlite_vfs_poll() was called. In that case
+	 * this commit and on which cowsql_vfs_poll() was called. In that case
 	 * we release the lock and update the WAL index.
 	 *
 	 * Otherwise, if the WAL index header is mapped it means that this VFS
@@ -2420,7 +2420,7 @@ int VfsAbort(sqlite3_vfs *vfs, const char *filename)
 	database = vfsDatabaseLookup(v, filename);
 	if (database == NULL) {
 		tracef("database: %s does not exist", filename);
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 
 	rv = vfsShmUnlock(&database->shm, 0, 1, SQLITE_SHM_EXCLUSIVE);
@@ -2530,7 +2530,7 @@ int VfsSnapshot(sqlite3_vfs *vfs, const char *filename, void **data, size_t *n)
 	*data = raft_malloc(*n);
 	if (*data == NULL) {
 		tracef("malloc");
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	cursor = *data;
@@ -2542,7 +2542,7 @@ int VfsSnapshot(sqlite3_vfs *vfs, const char *filename, void **data, size_t *n)
 }
 
 static void vfsDatabaseShallowSnapshot(struct vfsDatabase *d,
-				       struct dqlite_buffer *bufs)
+				       struct cowsql_buffer *bufs)
 {
 	uint32_t page_size;
 
@@ -2558,7 +2558,7 @@ static void vfsDatabaseShallowSnapshot(struct vfsDatabase *d,
 
 int VfsShallowSnapshot(sqlite3_vfs *vfs,
 		       const char *filename,
-		       struct dqlite_buffer bufs[],
+		       struct cowsql_buffer bufs[],
 		       uint32_t n)
 {
 	tracef("vfs snapshot filename %s", filename);
@@ -2621,7 +2621,7 @@ static int vfsDatabaseRestore(struct vfsDatabase *d,
 	n_pages = (unsigned)ByteGetBe32(&data[28]);
 
 	if (n < (uint64_t)n_pages * (uint64_t)page_size) {
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 
 	pages = sqlite3_malloc64(sizeof *pages * n_pages);
@@ -2655,7 +2655,7 @@ static int vfsDatabaseRestore(struct vfsDatabase *d,
 oom_after_pages_alloc:
 	sqlite3_free(pages);
 oom:
-	return DQLITE_NOMEM;
+	return COWSQL_NOMEM;
 }
 
 static int vfsWalRestore(struct vfsWal *w,
@@ -2720,7 +2720,7 @@ static int vfsWalRestore(struct vfsWal *w,
 oom_after_frames_alloc:
 	sqlite3_free(frames);
 oom:
-	return DQLITE_NOMEM;
+	return COWSQL_NOMEM;
 }
 
 int VfsRestore(sqlite3_vfs *vfs,
@@ -3034,7 +3034,7 @@ static int vfsDiskFileControlPragma(struct vfsFile *f, char **fnctl)
 	if (strcmp(left, "page_size") == 0 && right) {
 		int page_size = atoi(right);
 		/* The first page_size pragma sets page_size member of the db
-		 * and is called by dqlite based on the page_size configuration.
+		 * and is called by cowsql based on the page_size configuration.
 		 * Only used for on-disk databases.
 		 * */
 		if (f->db == NULL) {
@@ -3353,7 +3353,7 @@ static int vfsDiskAccess(sqlite3_vfs *vfs,
 	} else if (vfsFilenameEndsWith(filename, "-wal")) {
 		*result = 1;
 	} else {
-		/* dqlite database object exists, now check if the regular
+		/* cowsql database object exists, now check if the regular
 		 * SQLite file exists. */
 		return v->base_vfs->xAccess(vfs, filename, flags, result);
 	}
@@ -3389,7 +3389,7 @@ int VfsEnableDisk(struct sqlite3_vfs *vfs)
 
 int VfsDiskSnapshotWal(sqlite3_vfs *vfs,
 		       const char *path,
-		       struct dqlite_buffer *buf)
+		       struct cowsql_buffer *buf)
 {
 	struct vfs *v;
 	struct vfsDatabase *database;
@@ -3426,7 +3426,7 @@ err:
 
 int VfsDiskSnapshotDb(sqlite3_vfs *vfs,
 		      const char *path,
-		      struct dqlite_buffer *buf)
+		      struct cowsql_buffer *buf)
 {
 	struct vfs *v;
 	struct vfsDatabase *database;
@@ -3507,7 +3507,7 @@ static int vfsDiskDatabaseRestore(struct vfsDatabase *d,
 		if (sz <= 0) {
 			tracef("fwrite failed n:%zd sz:%zd errno:%d", n_left,
 			       sz, errno);
-			rv = DQLITE_ERROR;
+			rv = COWSQL_ERROR;
 			goto out;
 		}
 		n_left -= (size_t)sz;

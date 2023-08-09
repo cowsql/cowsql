@@ -1,5 +1,5 @@
-#ifndef DQLITE_SERVER_H
-#define DQLITE_SERVER_H
+#ifndef COWSQL_SERVER_H
+#define COWSQL_SERVER_H
 
 #include <raft.h>
 #include <raft/uv.h>
@@ -14,14 +14,14 @@
 #include "logger.h"
 #include "registry.h"
 
-#define DQLITE_ERRMSG_BUF_SIZE 300
+#define COWSQL_ERRMSG_BUF_SIZE 300
 
 /**
- * A single dqlite server instance.
+ * A single cowsql server instance.
  */
-struct dqlite_node
+struct cowsql_node
 {
-	bool initialized; /* dqlite__init succeeded */
+	bool initialized; /* cowsql__init succeeded */
 
 	pthread_t thread;                        /* Main run loop thread. */
 	struct config config;                    /* Config values */
@@ -30,7 +30,7 @@ struct dqlite_node
 	struct uv_loop_s loop;                   /* UV loop */
 	struct raft_uv_transport raft_transport; /* Raft libuv transport */
 	struct raft_io raft_io;                  /* libuv I/O */
-	struct raft_fsm raft_fsm;                /* dqlite FSM */
+	struct raft_fsm raft_fsm;                /* cowsql FSM */
 	sem_t ready;                             /* Server is ready */
 	sem_t stopped;                           /* Notify loop stopped */
 	sem_t handover_done;
@@ -42,7 +42,7 @@ struct dqlite_node
 	struct uv_stream_s *listener; /* Listening socket */
 	struct uv_async_s handover;
 	int handover_status;
-	void (*handover_done_cb)(struct dqlite_node *, int);
+	void (*handover_done_cb)(struct cowsql_node *, int);
 	struct uv_async_s stop;      /* Trigger UV loop stop */
 	struct uv_timer_s startup;   /* Unblock ready sem */
 	struct uv_prepare_s monitor; /* Raft state change monitor */
@@ -55,7 +55,7 @@ struct dqlite_node
 	    const char *,
 	    int *);             /* Connection function for role management */
 	void *connect_func_arg; /* User data for connection function */
-	char errmsg[DQLITE_ERRMSG_BUF_SIZE]; /* Last error occurred */
+	char errmsg[COWSQL_ERRMSG_BUF_SIZE]; /* Last error occurred */
 	struct id_state random_state;        /* For seeding ID generation */
 };
 
@@ -68,7 +68,7 @@ struct node_store_cache
 	unsigned cap;
 };
 
-struct dqlite_server
+struct cowsql_server
 {
 	/* Threading stuff: */
 	pthread_cond_t cond;
@@ -87,23 +87,23 @@ struct dqlite_server
 	bool is_new;
 	bool bootstrap;
 	char *dir_path; /* owned */
-	dqlite_node *local;
+	cowsql_node *local;
 	uint64_t local_id;
 	char *local_addr; /* owned */
 	char *bind_addr;  /* owned */
-	dqlite_connect_func connect;
+	cowsql_connect_func connect;
 	void *connect_arg;
 	unsigned long long refresh_period; /* in milliseconds */
 	int dir_fd;
 };
 
-int dqlite__init(struct dqlite_node *d,
-		 dqlite_node_id id,
+int cowsql__init(struct cowsql_node *d,
+		 cowsql_node_id id,
 		 const char *address,
 		 const char *dir);
 
-void dqlite__close(struct dqlite_node *d);
+void cowsql__close(struct cowsql_node *d);
 
-int dqlite__run(struct dqlite_node *d);
+int cowsql__run(struct cowsql_node *d);
 
 #endif

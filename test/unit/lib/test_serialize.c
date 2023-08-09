@@ -339,7 +339,7 @@ TEST_CASE(decode, short, NULL)
 	(void)params;
 	strcpy(buf, "John Doh");
 	rc = person__decode(&cursor, &f->person);
-	munit_assert_int(rc, ==, DQLITE_PARSE);
+	munit_assert_int(rc, ==, COWSQL_PARSE);
 	free(buf);
 	return MUNIT_OK;
 }
