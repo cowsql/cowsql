@@ -1,4 +1,4 @@
-dqlite [![CI Tests](https://github.com/canonical/dqlite/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/canonical/dqlite/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/canonical/dqlite/branch/master/graph/badge.svg)](https://codecov.io/gh/canonical/dqlite)
+dqlite [![CI Tests](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/cowsql/cowsql/branch/master/graph/badge.svg)](https://codecov.io/gh/cowsql/cowsql)
 ======
 
 [English](./README.md)|[简体中文](./README_CH.md)
@@ -18,7 +18,7 @@ Design highlights
   as event loop.
 * Custom wire protocol optimized for SQLite primitives and data types.
 * Data replication based on the [Raft](https://raft.github.io/) algorithm and its
-  efficient [C-raft](https://github.com/canonical/raft) implementation.
+  efficient [C-raft](https://github.com/cowsql/raft) implementation.
 
 License
 -------
@@ -26,7 +26,7 @@ License
 The dqlite library is released under a slightly modified version of LGPLv3, that
 includes a copyright exception allowing users to statically link the library code
 in their project and release the final work under their own terms. See the full
-[license](https://github.com/canonical/dqlite/blob/master/LICENSE) text.
+[license](https://github.com/cowsql/cowsql/blob/master/LICENSE) text.
 
 Compatibility
 -------------
@@ -76,7 +76,7 @@ To build libdqlite from source you'll need:
 
 * A reasonably recent version of [libuv](http://libuv.org/) (v1.8.0 or beyond).
 * A reasonably recent version of sqlite3-dev
-* A build of the [C-raft](https://github.com/canonical/raft) Raft library.
+* A build of the [C-raft](https://github.com/cowsql/raft) Raft library.
 
 Your distribution should already provide you with a pre-built libuv shared
 library and libsqlite3-dev.
@@ -84,7 +84,7 @@ library and libsqlite3-dev.
 To build the raft library:
 
 ```
-git clone https://github.com/canonical/raft.git
+git clone https://github.com/cowsql/raft.git
 cd raft
 autoreconf -i
 ./configure
