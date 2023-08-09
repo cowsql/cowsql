@@ -16,8 +16,7 @@ jobs:
           - gcc
           - clang
         tracing:
-          - LIBDQLITE_TRACE=1
-          - NOLIBDQLITE_TRACE=1
+          - LIBCOWSQL_TRACE=1
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -40,7 +39,7 @@ jobs:
           sudo ldconfig
           cd ..
 
-    - name: Build dqlite
+    - name: Build cowsql
       env:
         CC: ${{ matrix.compiler }}
       run: |
