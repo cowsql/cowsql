@@ -4,7 +4,7 @@
 
 #include "metrics.h"
 
-void dqlite__metrics_init(struct dqlite__metrics *m)
+void cowsql__metrics_init(struct cowsql__metrics *m)
 {
 	assert(m != NULL);
 

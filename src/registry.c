@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "lib/assert.h"
 
@@ -37,7 +37,7 @@ int registry__db_get(struct registry *r, const char *filename, struct db **db)
 	}
 	*db = sqlite3_malloc(sizeof **db);
 	if (*db == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	db__init(*db, r->config, filename);
 	QUEUE__PUSH(&r->dbs, &(*db)->queue);

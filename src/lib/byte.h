@@ -6,27 +6,27 @@
 #include <string.h>
 
 #if defined(__cplusplus)
-#define DQLITE_INLINE inline
+#define COWSQL_INLINE inline
 #else
-#define DQLITE_INLINE static inline
+#define COWSQL_INLINE static inline
 #endif
 
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-#define DQLITE_LITTLE_ENDIAN
+#define COWSQL_LITTLE_ENDIAN
 #elif defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-#define DQLITE_BIG_ENDIAN
+#define COWSQL_BIG_ENDIAN
 #endif
 
 #if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 8
-#define DQLITE_HAVE_BSWAP
+#define COWSQL_HAVE_BSWAP
 #endif
 
 /* Flip a 16-bit number to little-endian byte order */
-DQLITE_INLINE uint16_t ByteFlipLe16(uint16_t v)
+COWSQL_INLINE uint16_t ByteFlipLe16(uint16_t v)
 {
-#if defined(DQLITE_LITTLE_ENDIAN)
+#if defined(COWSQL_LITTLE_ENDIAN)
 	return v;
-#elif defined(DQLITE_BIG_ENDIAN) && defined(DQLITE_HAVE_BSWAP)
+#elif defined(COWSQL_BIG_ENDIAN) && defined(COWSQL_HAVE_BSWAP)
 	return __builtin_bswap16(v);
 #else
 	union {
@@ -42,11 +42,11 @@ DQLITE_INLINE uint16_t ByteFlipLe16(uint16_t v)
 }
 
 /* Flip a 32-bit number to little-endian byte order */
-DQLITE_INLINE uint32_t ByteFlipLe32(uint32_t v)
+COWSQL_INLINE uint32_t ByteFlipLe32(uint32_t v)
 {
-#if defined(DQLITE_LITTLE_ENDIAN)
+#if defined(COWSQL_LITTLE_ENDIAN)
 	return v;
-#elif defined(DQLITE_BIG_ENDIAN) && defined(DQLITE_HAVE_BSWAP)
+#elif defined(COWSQL_BIG_ENDIAN) && defined(COWSQL_HAVE_BSWAP)
 	return __builtin_bswap32(v);
 #else
 	union {
@@ -64,11 +64,11 @@ DQLITE_INLINE uint32_t ByteFlipLe32(uint32_t v)
 }
 
 /* Flip a 64-bit number to little-endian byte order */
-DQLITE_INLINE uint64_t ByteFlipLe64(uint64_t v)
+COWSQL_INLINE uint64_t ByteFlipLe64(uint64_t v)
 {
-#if defined(DQLITE_LITTLE_ENDIAN)
+#if defined(COWSQL_LITTLE_ENDIAN)
 	return v;
-#elif defined(DQLITE_BIG_ENDIAN) && defined(DQLITE_HAVE_BSWAP)
+#elif defined(COWSQL_BIG_ENDIAN) && defined(COWSQL_HAVE_BSWAP)
 	return __builtin_bswap64(v);
 #else
 	union {
@@ -95,7 +95,7 @@ DQLITE_INLINE uint64_t ByteFlipLe64(uint64_t v)
 #pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
-DQLITE_INLINE uint16_t ByteGetBe16(const uint8_t *buf)
+COWSQL_INLINE uint16_t ByteGetBe16(const uint8_t *buf)
 {
 	uint16_t x = buf[0];
 	uint16_t y = buf[1];
@@ -103,7 +103,7 @@ DQLITE_INLINE uint16_t ByteGetBe16(const uint8_t *buf)
 	return x | y;
 }
 
-DQLITE_INLINE uint32_t ByteGetBe32(const uint8_t *buf)
+COWSQL_INLINE uint32_t ByteGetBe32(const uint8_t *buf)
 {
 	uint32_t w = buf[0];
 	uint32_t x = buf[1];
@@ -115,7 +115,7 @@ DQLITE_INLINE uint32_t ByteGetBe32(const uint8_t *buf)
 	return w | x | y | z;
 }
 
-DQLITE_INLINE void BytePutBe32(uint32_t v, uint8_t *buf)
+COWSQL_INLINE void BytePutBe32(uint32_t v, uint8_t *buf)
 {
 	buf[0] = (uint8_t)(v >> 24);
 	buf[1] = (uint8_t)(v >> 16);
@@ -127,7 +127,7 @@ DQLITE_INLINE void BytePutBe32(uint32_t v, uint8_t *buf)
  * Add padding to size if it's not a multiple of 8. E.g. if 11 is passed, 16 is
  * returned.
  */
-DQLITE_INLINE size_t BytePad64(size_t size)
+COWSQL_INLINE size_t BytePad64(size_t size)
 {
 	size_t rest = size % sizeof(uint64_t);
 	if (rest != 0) {

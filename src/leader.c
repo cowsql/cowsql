@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "./lib/assert.h"
 
@@ -289,7 +289,7 @@ finish:
 }
 
 static int leaderApplyFrames(struct exec *req,
-			     dqlite_vfs_frame *frames,
+			     cowsql_vfs_frame *frames,
 			     unsigned n)
 {
 	tracef("leader apply frames id:%" PRIu64, req->id);
@@ -311,7 +311,7 @@ static int leaderApplyFrames(struct exec *req,
 	apply = raft_malloc(sizeof *req);
 	if (apply == NULL) {
 		tracef("malloc");
-		rv = DQLITE_NOMEM;
+		rv = COWSQL_NOMEM;
 		goto err;
 	}
 
@@ -352,7 +352,7 @@ static void leaderExecV2(struct exec *req)
 	struct leader *l = req->leader;
 	struct db *db = l->db;
 	sqlite3_vfs *vfs = sqlite3_vfs_find(db->config->name);
-	dqlite_vfs_frame *frames;
+	cowsql_vfs_frame *frames;
 	uint64_t size;
 	unsigned n;
 	unsigned i;

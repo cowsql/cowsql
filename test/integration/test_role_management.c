@@ -75,7 +75,7 @@ static void tearDown(void *data)
 	free(f);
 }
 
-static bool hasRole(struct fixture *f, dqlite_node_id id, int role)
+static bool hasRole(struct fixture *f, cowsql_node_id id, int role)
 {
 	struct client_node_info *servers;
 	uint64_t n_servers;
@@ -115,7 +115,7 @@ TEST(role_management, promote, setUp, tearDown, 0, role_management_params)
 	id = 2;
 	address = "@2";
 	ADD(id, address);
-	for (tries = 0; tries < TRIES && !hasRole(f, 2, DQLITE_VOTER);
+	for (tries = 0; tries < TRIES && !hasRole(f, 2, COWSQL_VOTER);
 	     tries += 1) {
 		sleep(1);
 	}
@@ -126,7 +126,7 @@ TEST(role_management, promote, setUp, tearDown, 0, role_management_params)
 	id = 3;
 	address = "@3";
 	ADD(id, address);
-	for (tries = 0; tries < TRIES && !hasRole(f, 3, DQLITE_VOTER);
+	for (tries = 0; tries < TRIES && !hasRole(f, 3, COWSQL_VOTER);
 	     tries += 1) {
 		sleep(1);
 	}
@@ -137,7 +137,7 @@ TEST(role_management, promote, setUp, tearDown, 0, role_management_params)
 	id = 4;
 	address = "@4";
 	ADD(id, address);
-	for (tries = 0; tries < TRIES && !hasRole(f, 4, DQLITE_STANDBY);
+	for (tries = 0; tries < TRIES && !hasRole(f, 4, COWSQL_STANDBY);
 	     tries += 1) {
 		sleep(1);
 	}
@@ -148,7 +148,7 @@ TEST(role_management, promote, setUp, tearDown, 0, role_management_params)
 	id = 5;
 	address = "@5";
 	ADD(id, address);
-	for (tries = 0; tries < TRIES && !hasRole(f, 5, DQLITE_STANDBY);
+	for (tries = 0; tries < TRIES && !hasRole(f, 5, COWSQL_STANDBY);
 	     tries += 1) {
 		sleep(1);
 	}

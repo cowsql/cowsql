@@ -7,18 +7,18 @@ if !BUILD_SQLITE_ENABLED
 AM_LDFLAGS += $(SQLITE_LIBS)
 endif
 
-include_HEADERS = include/dqlite.h
+include_HEADERS = include/cowsql.h
 
-lib_LTLIBRARIES = libdqlite.la
-libdqlite_la_CFLAGS = $(AM_CFLAGS) -fvisibility=hidden
-libdqlite_la_LDFLAGS = $(AM_LDFLAGS) -version-info 0:1:0
-libdqlite_la_SOURCES = \
+lib_LTLIBRARIES = libcowsql.la
+libcowsql_la_CFLAGS = $(AM_CFLAGS) -fvisibility=hidden
+libcowsql_la_LDFLAGS = $(AM_LDFLAGS) -version-info 0:1:0
+libcowsql_la_SOURCES = \
   src/bind.c \
   src/client/protocol.c \
   src/command.c \
   src/conn.c \
   src/db.c \
-  src/dqlite.c \
+  src/cowsql.c \
   src/error.c \
   src/format.c \
   src/fsm.c \
@@ -47,7 +47,7 @@ libdqlite_la_SOURCES = \
   src/vfs.c
 
 if BUILD_SQLITE_ENABLED
-libdqlite_la_SOURCES += sqlite3.c
+libcowsql_la_SOURCES += sqlite3.c
 endif
 
 check_PROGRAMS = \
@@ -70,7 +70,7 @@ libtest_la_SOURCES = \
   test/lib/sqlite.c \
   test/lib/uv.c
 
-unit_test_SOURCES = $(libdqlite_la_SOURCES)
+unit_test_SOURCES = $(libcowsql_la_SOURCES)
 unit_test_SOURCES += \
   test/test_error.c \
   test/test_integration.c \
@@ -108,7 +108,7 @@ integration_test_SOURCES = \
   test/integration/main.c
 integration_test_CFLAGS = $(AM_CFLAGS) -Wno-conversion
 integration_test_LDFLAGS = $(AM_LDFLAGS) -no-install
-integration_test_LDADD = libtest.la libdqlite.la
+integration_test_LDADD = libtest.la libcowsql.la
 
 if DEBUG_ENABLED
   AM_CFLAGS += -g
@@ -119,7 +119,7 @@ if SANITIZE_ENABLED
   AM_CFLAGS += -fsanitize=address
 endif
 if BACKTRACE_ENABLED
-  AM_CFLAGS += -DDQLITE_ASSERT_WITH_BACKTRACE
+  AM_CFLAGS += -DCOWSQL_ASSERT_WITH_BACKTRACE
   AM_LDFLAGS += -lbacktrace
 endif
 
@@ -140,4 +140,4 @@ distclean-local: code-coverage-dist-clean
 endif # CODE_COVERAGE_ENABLED
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = dqlite.pc
+pkgconfig_DATA = cowsql.pc

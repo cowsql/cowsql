@@ -4,7 +4,7 @@
 #include <raft.h>
 #include <sqlite3.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include "../lib/config.h"
 #include "../lib/fs.h"
@@ -1472,7 +1472,7 @@ TEST(VfsInit, oom, setUp, tearDown, 0, test_create_oom_params)
 	test_heap_fault_enable();
 
 	rv = VfsInit(&vfs, "dqlite");
-	munit_assert_int(rv, ==, DQLITE_NOMEM);
+	munit_assert_int(rv, ==, COWSQL_NOMEM);
 
 	return MUNIT_OK;
 }

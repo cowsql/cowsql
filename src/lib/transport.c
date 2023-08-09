@@ -1,6 +1,6 @@
 #include <raft.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include "assert.h"
 #include "transport.h"
@@ -84,7 +84,7 @@ int transport__stream(struct uv_loop_s *loop,
 		case UV_TCP:
 			tcp = raft_malloc(sizeof *tcp);
 			if (tcp == NULL) {
-				return DQLITE_NOMEM;
+				return COWSQL_NOMEM;
 			}
 			rv = uv_tcp_init(loop, tcp);
 			assert(rv == 0);
@@ -98,7 +98,7 @@ int transport__stream(struct uv_loop_s *loop,
 		case UV_NAMED_PIPE:
 			pipe = raft_malloc(sizeof *pipe);
 			if (pipe == NULL) {
-				return DQLITE_NOMEM;
+				return COWSQL_NOMEM;
 			}
 			rv = uv_pipe_init(loop, pipe, 0);
 			assert(rv == 0);
@@ -156,7 +156,7 @@ int transport__read(struct transport *t, uv_buf_t *buf, transport_read_cb cb)
 	t->read_cb = cb;
 	rv = uv_read_start(t->stream, alloc_cb, read_cb);
 	if (rv != 0) {
-		return DQLITE_ERROR;
+		return COWSQL_ERROR;
 	}
 	return 0;
 }

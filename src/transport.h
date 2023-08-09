@@ -11,7 +11,7 @@
 
 #include <raft/uv.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 int transportDefaultConnect(void *arg, const char *address, int *fd);
 

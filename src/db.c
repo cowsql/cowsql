@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "./lib/assert.h"
 
@@ -24,13 +24,13 @@ int db__init(struct db *db, struct config *config, const char *filename)
 	db->config = config;
 	db->filename = sqlite3_malloc((int)(strlen(filename) + 1));
 	if (db->filename == NULL) {
-		rv = DQLITE_NOMEM;
+		rv = COWSQL_NOMEM;
 		goto err;
 	}
 	strcpy(db->filename, filename);
 	db->path = sqlite3_malloc(MAX_PATHNAME + 1);
 	if (db->path == NULL) {
-		rv = DQLITE_NOMEM;
+		rv = COWSQL_NOMEM;
 		goto err_after_filename_alloc;
 	}
 	if (db->config->disk) {

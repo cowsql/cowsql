@@ -37,8 +37,8 @@
  * or values in sequence, encoded using type-specific rules.
  */
 
-#ifndef DQLITE_TUPLE_H_
-#define DQLITE_TUPLE_H_
+#ifndef COWSQL_TUPLE_H_
+#define COWSQL_TUPLE_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -145,4 +145,4 @@ int tuple_encoder__init(struct tuple_encoder *e,
  */
 int tuple_encoder__next(struct tuple_encoder *e, struct value *value);
 
-#endif /* DQLITE_TUPLE_H_ */
+#endif /* COWSQL_TUPLE_H_ */

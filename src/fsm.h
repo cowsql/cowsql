@@ -2,8 +2,8 @@
  * Dqlite Raft FSM
  */
 
-#ifndef DQLITE_FSM_H_
-#define DQLITE_FSM_H_
+#ifndef COWSQL_FSM_H_
+#define COWSQL_FSM_H_
 
 #include <raft.h>
 
@@ -28,4 +28,4 @@ int fsm__init_disk(struct raft_fsm *fsm,
 
 void fsm__close(struct raft_fsm *fsm);
 
-#endif /* DQLITE_REPLICATION_METHODS_H_ */
+#endif /* COWSQL_REPLICATION_METHODS_H_ */

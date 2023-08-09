@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 #include "logger.h"
 #include "munit.h"
@@ -16,16 +16,16 @@ void test_logger_emit(void *data, int level, const char *format, va_list args)
 	(void)data;
 
 	switch (level) {
-		case DQLITE_DEBUG:
+		case COWSQL_DEBUG:
 			level_name = "DEBUG";
 			break;
-		case DQLITE_INFO:
+		case COWSQL_INFO:
 			level_name = "INFO ";
 			break;
-		case DQLITE_WARN:
+		case COWSQL_WARN:
 			level_name = "WARN ";
 			break;
-		case DQLITE_LOG_ERROR:
+		case COWSQL_LOG_ERROR:
 			level_name = "ERROR";
 			break;
 	};

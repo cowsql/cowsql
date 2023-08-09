@@ -30,7 +30,7 @@ static void tear_down(void *data)
 	socklen_t addr_len = sizeof(f->addr_un);                        \
 	int rv;                                                         \
 	rv = AddrParse(ADDR, (struct sockaddr *)&f->addr_un, &addr_len, \
-		       "8080", DQLITE_ADDR_PARSE_UNIX);                 \
+		       "8080", COWSQL_ADDR_PARSE_UNIX);                 \
 	munit_assert_int(rv, ==, STATUS);                               \
 	munit_assert_int(f->addr_un.sun_family, ==, FAMILY)
 

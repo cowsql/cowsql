@@ -2,12 +2,12 @@
  * Core dqlite server engine, calling out SQLite for serving client requests.
  */
 
-#ifndef DQLITE_GATEWAY_H_
-#define DQLITE_GATEWAY_H_
+#ifndef COWSQL_GATEWAY_H_
+#define COWSQL_GATEWAY_H_
 
 #include <raft.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "lib/buffer.h"
 #include "lib/serialize.h"
@@ -133,4 +133,4 @@ int gateway__handle(struct gateway *g,
  */
 int gateway__resume(struct gateway *g, bool *finished);
 
-#endif /* DQLITE_GATEWAY_H_ */
+#endif /* COWSQL_GATEWAY_H_ */

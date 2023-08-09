@@ -42,8 +42,8 @@
  *
  *****************************************************************************/
 
-#ifndef DQLITE_STMT_H
-#define DQLITE_STMT_H
+#ifndef COWSQL_STMT_H
+#define COWSQL_STMT_H
 
 #include <sqlite3.h>
 
@@ -73,4 +73,4 @@ const char *stmt__hash(struct stmt *stmt);
 
 REGISTRY(stmt__registry, stmt);
 
-#endif /* DQLITE_STMT_H */
+#endif /* COWSQL_STMT_H */

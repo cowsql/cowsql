@@ -1,20 +1,20 @@
 /* Tracing functionality for dqlite */
 
-#ifndef DQLITE_TRACING_H_
-#define DQLITE_TRACING_H_
+#ifndef COWSQL_TRACING_H_
+#define COWSQL_TRACING_H_
 
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "utils.h"
 
 /* This global variable is only written once at startup and is only read
  * from there on. Users should not manipulate the value of this variable. */
-DQLITE_VISIBLE_TO_TESTS extern bool _dqliteTracingEnabled;
+COWSQL_VISIBLE_TO_TESTS extern bool _dqliteTracingEnabled;
 
 #define tracef(...)                                                         \
 	do {                                                                \
@@ -31,6 +31,6 @@ DQLITE_VISIBLE_TO_TESTS extern bool _dqliteTracingEnabled;
 	} while (0)
 
 /* Enable tracing if the appropriate env variable is set, or disable tracing. */
-DQLITE_VISIBLE_TO_TESTS void dqliteTracingMaybeEnable(bool enabled);
+COWSQL_VISIBLE_TO_TESTS void dqliteTracingMaybeEnable(bool enabled);
 
-#endif /* DQLITE_TRACING_H_ */
+#endif /* COWSQL_TRACING_H_ */

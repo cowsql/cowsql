@@ -1,7 +1,7 @@
 /* Translate to/from dqlite types */
 
-#ifndef DQLITE_TRANSLATE_H_
-#define DQLITE_TRANSLATE_H_
+#ifndef COWSQL_TRANSLATE_H_
+#define COWSQL_TRANSLATE_H_
 
 /* Translate a raft error to a dqlite one. */
 int translateRaftErrCode(int code);
@@ -12,4 +12,4 @@ int translateDqliteRole(int role);
 /* Translate a raft role code to its dqlite equivalent. */
 int translateRaftRole(int role);
 
-#endif /* DQLITE_TRANSLATE_H_ */
+#endif /* COWSQL_TRANSLATE_H_ */

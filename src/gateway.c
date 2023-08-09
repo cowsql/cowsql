@@ -28,7 +28,7 @@ void gateway__init(struct gateway *g,
 	g->barrier.data = g;
 	g->barrier.cb = NULL;
 	g->barrier.leader = NULL;
-	g->protocol = DQLITE_PROTOCOL_VERSION;
+	g->protocol = COWSQL_PROTOCOL_VERSION;
 	g->client_id = 0;
 	g->random_state = seed;
 }
@@ -60,7 +60,7 @@ void gateway__leader_close(struct gateway *g, int reason)
 			struct raft_barrier *b = &g->leader->exec->barrier.req;
 			b->cb(b, reason);
 			assert(g->leader->exec == NULL);
-		} else if (g->req->type == DQLITE_REQUEST_QUERY_SQL) {
+		} else if (g->req->type == COWSQL_REQUEST_QUERY_SQL) {
 			/* Finalize the statement that was in the process of
 			 * yielding rows. We only need to handle QUERY_SQL
 			 * because for QUERY and EXEC the statement is finalized
@@ -102,7 +102,7 @@ void gateway__close(struct gateway *g)
 		int rv_;                                              \
 		if (req->schema != 0) {                               \
 			tracef("bad schema version %d", req->schema); \
-			failure(req, DQLITE_PARSE,                    \
+			failure(req, COWSQL_PARSE,                    \
 				"unrecognized schema version");       \
 			return 0;                                     \
 		}                                                     \
@@ -128,7 +128,7 @@ void gateway__close(struct gateway *g)
 		 * bytes, this can't fail. */                                  \
 		assert(_cursor != NULL);                                       \
 		response_##LOWER##__encode(&RESP, &_cursor);                   \
-		req->cb(req, 0, DQLITE_RESPONSE_##UPPER, SCHEMA);              \
+		req->cb(req, 0, COWSQL_RESPONSE_##UPPER, SCHEMA);              \
 	}
 
 /* Encode the given success response and invoke the request callback,
@@ -189,7 +189,7 @@ static void failure(struct handle *req, int code, const char *message)
 	 * than that. So this can't fail. */
 	assert(cursor != NULL);
 	response_failure__encode(&failure, &cursor);
-	req->cb(req, 0, DQLITE_RESPONSE_FAILURE, 0);
+	req->cb(req, 0, COWSQL_RESPONSE_FAILURE, 0);
 }
 
 static void emptyRows(struct handle *req)
@@ -199,9 +199,9 @@ static void emptyRows(struct handle *req)
 	assert(cursor != NULL);
 	val = 0;
 	uint64__encode(&val, &cursor);
-	val = DQLITE_RESPONSE_ROWS_DONE;
+	val = COWSQL_RESPONSE_ROWS_DONE;
 	uint64__encode(&val, &cursor);
-	req->cb(req, 0, DQLITE_RESPONSE_ROWS, 0);
+	req->cb(req, 0, COWSQL_RESPONSE_ROWS, 0);
 }
 
 static int handle_leader_legacy(struct gateway *g, struct handle *req)
@@ -225,7 +225,7 @@ static int handle_leader(struct gateway *g, struct handle *req)
 	raft_id id = 0;
 	const char *address = NULL;
 	unsigned i;
-	if (g->protocol == DQLITE_PROTOCOL_VERSION_LEGACY) {
+	if (g->protocol == COWSQL_PROTOCOL_VERSION_LEGACY) {
 		return handle_leader_legacy(g, req);
 	}
 	START_V0(leader, server);
@@ -281,7 +281,7 @@ static int handle_open(struct gateway *g, struct handle *req)
 	g->leader = sqlite3_malloc(sizeof *g->leader);
 	if (g->leader == NULL) {
 		tracef("malloc failed");
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	rc = leader__init(g->leader, db, g->raft);
 	if (rc != 0) {
@@ -333,7 +333,7 @@ static void prepareBarrierCb(struct barrier *barrier, int status)
 		return;
 	}
 
-	if (req->schema == DQLITE_PREPARE_STMT_SCHEMA_V0) {
+	if (req->schema == COWSQL_PREPARE_STMT_SCHEMA_V0) {
 		rc = sqlite3_prepare_v2(g->leader->conn, tail, -1, &tail_stmt,
 					NULL);
 		if (rc != 0 || tail_stmt != NULL) {
@@ -345,22 +345,22 @@ static void prepareBarrierCb(struct barrier *barrier, int status)
 	}
 
 	switch (req->schema) {
-		case DQLITE_PREPARE_STMT_SCHEMA_V0:
+		case COWSQL_PREPARE_STMT_SCHEMA_V0:
 			response_v0.db_id = (uint32_t)req->db_id;
 			response_v0.id = (uint32_t)stmt->id;
 			response_v0.params =
 			    (uint64_t)sqlite3_bind_parameter_count(stmt->stmt);
 			SUCCESS(stmt, STMT, response_v0,
-				DQLITE_PREPARE_STMT_SCHEMA_V0);
+				COWSQL_PREPARE_STMT_SCHEMA_V0);
 			break;
-		case DQLITE_PREPARE_STMT_SCHEMA_V1:
+		case COWSQL_PREPARE_STMT_SCHEMA_V1:
 			response_v1.db_id = (uint32_t)req->db_id;
 			response_v1.id = (uint32_t)stmt->id;
 			response_v1.params =
 			    (uint64_t)sqlite3_bind_parameter_count(stmt->stmt);
 			response_v1.offset = (uint64_t)(tail - sql);
 			SUCCESS(stmt_with_offset, STMT_WITH_OFFSET, response_v1,
-				DQLITE_PREPARE_STMT_SCHEMA_V1);
+				COWSQL_PREPARE_STMT_SCHEMA_V1);
 			break;
 		default:
 			assert(0);
@@ -375,8 +375,8 @@ static int handle_prepare(struct gateway *g, struct handle *req)
 	struct request_prepare request = {0};
 	int rc;
 
-	if (req->schema != DQLITE_PREPARE_STMT_SCHEMA_V0 &&
-	    req->schema != DQLITE_PREPARE_STMT_SCHEMA_V1) {
+	if (req->schema != COWSQL_PREPARE_STMT_SCHEMA_V0 &&
+	    req->schema != COWSQL_PREPARE_STMT_SCHEMA_V1) {
 		failure(req, SQLITE_ERROR, "unrecognized schema version");
 		return 0;
 	}
@@ -468,15 +468,15 @@ static int handle_exec(struct gateway *g, struct handle *req)
 	int rv;
 
 	switch (req->schema) {
-		case DQLITE_REQUEST_PARAMS_SCHEMA_V0:
+		case COWSQL_REQUEST_PARAMS_SCHEMA_V0:
 			tuple_format = TUPLE__PARAMS;
 			break;
-		case DQLITE_REQUEST_PARAMS_SCHEMA_V1:
+		case COWSQL_REQUEST_PARAMS_SCHEMA_V1:
 			tuple_format = TUPLE__PARAMS32;
 			break;
 		default:
 			tracef("bad schema version %d", req->schema);
-			failure(req, DQLITE_PARSE,
+			failure(req, COWSQL_PARSE,
 				"unrecognized schema version");
 			return 0;
 	}
@@ -533,17 +533,17 @@ static void query_batch(struct gateway *g)
 	}
 
 	if (rc == SQLITE_ROW) {
-		response.eof = DQLITE_RESPONSE_ROWS_PART;
+		response.eof = COWSQL_RESPONSE_ROWS_PART;
 		g->req = req;
 		SUCCESS_V0(rows, ROWS);
 		return;
 	} else {
-		response.eof = DQLITE_RESPONSE_ROWS_DONE;
+		response.eof = COWSQL_RESPONSE_ROWS_DONE;
 		SUCCESS_V0(rows, ROWS);
 	}
 
 done:
-	if (req->type == DQLITE_REQUEST_QUERY_SQL) {
+	if (req->type == COWSQL_REQUEST_QUERY_SQL) {
 		sqlite3_finalize(stmt);
 	}
 }
@@ -598,15 +598,15 @@ static int handle_query(struct gateway *g, struct handle *req)
 	int rv;
 
 	switch (req->schema) {
-		case DQLITE_REQUEST_PARAMS_SCHEMA_V0:
+		case COWSQL_REQUEST_PARAMS_SCHEMA_V0:
 			tuple_format = TUPLE__PARAMS;
 			break;
-		case DQLITE_REQUEST_PARAMS_SCHEMA_V1:
+		case COWSQL_REQUEST_PARAMS_SCHEMA_V1:
 			tuple_format = TUPLE__PARAMS32;
 			break;
 		default:
 			tracef("bad schema version %d", req->schema);
-			failure(req, DQLITE_PARSE,
+			failure(req, COWSQL_PARSE,
 				"unrecognized schema version");
 			return 0;
 	}
@@ -718,10 +718,10 @@ static void handle_exec_sql_next(struct gateway *g,
 
 	if (!done) {
 		switch (req->schema) {
-			case DQLITE_REQUEST_PARAMS_SCHEMA_V0:
+			case COWSQL_REQUEST_PARAMS_SCHEMA_V0:
 				tuple_format = TUPLE__PARAMS;
 				break;
-			case DQLITE_REQUEST_PARAMS_SCHEMA_V1:
+			case COWSQL_REQUEST_PARAMS_SCHEMA_V1:
 				tuple_format = TUPLE__PARAMS32;
 				break;
 			default:
@@ -788,7 +788,7 @@ static int handle_exec_sql(struct gateway *g, struct handle *req)
 	 * won't use it until later. */
 	if (req->schema != 0 && req->schema != 1) {
 		tracef("bad schema version %d", req->schema);
-		failure(req, DQLITE_PARSE, "unrecognized schema version");
+		failure(req, COWSQL_PARSE, "unrecognized schema version");
 		return 0;
 	}
 	/* The only difference in layout between the v0 and v1 requests is in
@@ -876,10 +876,10 @@ static void querySqlBarrierCb(struct barrier *barrier, int status)
 	}
 
 	switch (req->schema) {
-		case DQLITE_REQUEST_PARAMS_SCHEMA_V0:
+		case COWSQL_REQUEST_PARAMS_SCHEMA_V0:
 			tuple_format = TUPLE__PARAMS;
 			break;
-		case DQLITE_REQUEST_PARAMS_SCHEMA_V1:
+		case COWSQL_REQUEST_PARAMS_SCHEMA_V1:
 			tuple_format = TUPLE__PARAMS32;
 			break;
 		default:
@@ -922,7 +922,7 @@ static int handle_query_sql(struct gateway *g, struct handle *req)
 	/* Fail early if the schema version isn't recognized. */
 	if (req->schema != 0 && req->schema != 1) {
 		tracef("bad schema version %d", req->schema);
-		failure(req, DQLITE_PARSE, "unrecognized schema version");
+		failure(req, COWSQL_PARSE, "unrecognized schema version");
 		return 0;
 	}
 	/* Schema version only affect the tuple format, which is parsed later */
@@ -998,7 +998,7 @@ static int handle_add(struct gateway *g, struct handle *req)
 
 	r = sqlite3_malloc(sizeof *r);
 	if (r == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	r->gateway = g;
 	r->req.data = r;
@@ -1024,7 +1024,7 @@ static int handle_promote_or_assign(struct gateway *g, struct handle *req)
 	tracef("handle assign");
 	struct cursor *cursor = &req->cursor;
 	struct change *r;
-	uint64_t role = DQLITE_VOTER;
+	uint64_t role = COWSQL_VOTER;
 	uint64_t req_id;
 	int rv;
 	START_V0(promote_or_assign, empty);
@@ -1045,7 +1045,7 @@ static int handle_promote_or_assign(struct gateway *g, struct handle *req)
 	r = sqlite3_malloc(sizeof *r);
 	if (r == NULL) {
 		tracef("malloc failed");
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	r->gateway = g;
 	r->req.data = r;
@@ -1081,7 +1081,7 @@ static int handle_remove(struct gateway *g, struct handle *req)
 	r = sqlite3_malloc(sizeof *r);
 	if (r == NULL) {
 		tracef("malloc failed");
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	r->gateway = g;
 	r->req.data = r;
@@ -1136,7 +1136,7 @@ static int dumpFile(const char *filename,
 	return 0;
 
 oom:
-	return DQLITE_NOMEM;
+	return COWSQL_NOMEM;
 }
 
 static int handle_dump(struct gateway *g, struct handle *req)
@@ -1224,7 +1224,7 @@ out_free_data:
 	}
 
 	if (!err) {
-		req->cb(req, 0, DQLITE_RESPONSE_FILES, 0);
+		req->cb(req, 0, COWSQL_RESPONSE_FILES, 0);
 	}
 
 	return 0;
@@ -1240,8 +1240,8 @@ static int encodeServer(struct gateway *g,
 	uint64_t role;
 	text_t address;
 
-	assert(format == DQLITE_REQUEST_CLUSTER_FORMAT_V0 ||
-	       format == DQLITE_REQUEST_CLUSTER_FORMAT_V1);
+	assert(format == COWSQL_REQUEST_CLUSTER_FORMAT_V0 ||
+	       format == COWSQL_REQUEST_CLUSTER_FORMAT_V1);
 
 	id = g->raft->configuration.servers[i].id;
 	address = g->raft->configuration.servers[i].address;
@@ -1250,23 +1250,23 @@ static int encodeServer(struct gateway *g,
 
 	cur = buffer__advance(buffer, uint64__sizeof(&id));
 	if (cur == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	uint64__encode(&id, &cur);
 
 	cur = buffer__advance(buffer, text__sizeof(&address));
 	if (cur == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	text__encode(&address, &cur);
 
-	if (format == DQLITE_REQUEST_CLUSTER_FORMAT_V0) {
+	if (format == COWSQL_REQUEST_CLUSTER_FORMAT_V0) {
 		return 0;
 	}
 
 	cur = buffer__advance(buffer, uint64__sizeof(&role));
 	if (cur == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	uint64__encode(&role, &cur);
 
@@ -1282,10 +1282,10 @@ static int handle_cluster(struct gateway *g, struct handle *req)
 	int rv;
 	START_V0(cluster, servers);
 
-	if (request.format != DQLITE_REQUEST_CLUSTER_FORMAT_V0 &&
-	    request.format != DQLITE_REQUEST_CLUSTER_FORMAT_V1) {
+	if (request.format != COWSQL_REQUEST_CLUSTER_FORMAT_V0 &&
+	    request.format != COWSQL_REQUEST_CLUSTER_FORMAT_V1) {
 		tracef("bad cluster format");
-		failure(req, DQLITE_PARSE, "unrecognized cluster format");
+		failure(req, COWSQL_PARSE, "unrecognized cluster format");
 		return 0;
 	}
 
@@ -1303,7 +1303,7 @@ static int handle_cluster(struct gateway *g, struct handle *req)
 		}
 	}
 
-	req->cb(req, 0, DQLITE_RESPONSE_SERVERS, 0);
+	req->cb(req, 0, COWSQL_RESPONSE_SERVERS, 0);
 
 	return 0;
 }
@@ -1317,7 +1317,7 @@ void raftTransferCb(struct raft_transfer *r)
 	sqlite3_free(r);
 	if (g->raft->state == RAFT_LEADER) {
 		tracef("transfer failed");
-		failure(req, DQLITE_ERROR, "leadership transfer failed");
+		failure(req, COWSQL_ERROR, "leadership transfer failed");
 	} else {
 		SUCCESS_V0(empty, EMPTY);
 	}
@@ -1337,7 +1337,7 @@ static int handle_transfer(struct gateway *g, struct handle *req)
 	r = sqlite3_malloc(sizeof *r);
 	if (r == NULL) {
 		tracef("malloc failed");
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	r->data = g;
 	g->req = req;
@@ -1359,7 +1359,7 @@ static int handle_describe(struct gateway *g, struct handle *req)
 	tracef("handle describe");
 	struct cursor *cursor = &req->cursor;
 	START_V0(describe, metadata);
-	if (request.format != DQLITE_REQUEST_DESCRIBE_FORMAT_V0) {
+	if (request.format != COWSQL_REQUEST_DESCRIBE_FORMAT_V0) {
 		tracef("bad format");
 		failure(req, SQLITE_PROTOCOL, "bad format version");
 	}
@@ -1388,7 +1388,7 @@ int gateway__handle(struct gateway *g,
 {
 	tracef("gateway handle");
 	int rc = 0;
-	sqlite3_stmt *stmt = NULL;  // used for DQLITE_REQUEST_INTERRUPT
+	sqlite3_stmt *stmt = NULL;  // used for COWSQL_REQUEST_INTERRUPT
 
 	if (g->req == NULL) {
 		goto handle;
@@ -1399,12 +1399,12 @@ int gateway__handle(struct gateway *g,
 	 * gateway__resume in write_cb will indicate it has not finished
 	 * returning results and a new request (in this case, the interrupt)
 	 * will not be read. */
-	if (g->req->type == DQLITE_REQUEST_QUERY &&
-	    type == DQLITE_REQUEST_INTERRUPT) {
+	if (g->req->type == COWSQL_REQUEST_QUERY &&
+	    type == COWSQL_REQUEST_INTERRUPT) {
 		goto handle;
 	}
-	if (g->req->type == DQLITE_REQUEST_QUERY_SQL &&
-	    type == DQLITE_REQUEST_INTERRUPT) {
+	if (g->req->type == COWSQL_REQUEST_QUERY_SQL &&
+	    type == COWSQL_REQUEST_INTERRUPT) {
 		stmt = g->req->stmt;
 		goto handle;
 	}
@@ -1428,13 +1428,13 @@ handle:
 
 	switch (type) {
 #define DISPATCH(LOWER, UPPER, _)            \
-	case DQLITE_REQUEST_##UPPER:         \
+	case COWSQL_REQUEST_##UPPER:         \
 		rc = handle_##LOWER(g, req); \
 		break;
 		REQUEST__TYPES(DISPATCH);
 		default:
 			tracef("unrecognized request type %d", type);
-			failure(req, DQLITE_PARSE, "unrecognized request type");
+			failure(req, COWSQL_PARSE, "unrecognized request type");
 			rc = 0;
 	}
 
@@ -1443,8 +1443,8 @@ handle:
 
 int gateway__resume(struct gateway *g, bool *finished)
 {
-	if (g->req == NULL || (g->req->type != DQLITE_REQUEST_QUERY &&
-			       g->req->type != DQLITE_REQUEST_QUERY_SQL)) {
+	if (g->req == NULL || (g->req->type != COWSQL_REQUEST_QUERY &&
+			       g->req->type != COWSQL_REQUEST_QUERY_SQL)) {
 		tracef("gateway resume - finished");
 		*finished = true;
 		return 0;

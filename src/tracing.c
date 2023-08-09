@@ -2,13 +2,13 @@
 
 #include <stdlib.h>
 
-#define LIBDQLITE_TRACE "LIBDQLITE_TRACE"
+#define LIBCOWSQL_TRACE "LIBCOWSQL_TRACE"
 
 bool _dqliteTracingEnabled = false;
 
 void dqliteTracingMaybeEnable(bool enable)
 {
-	if (getenv(LIBDQLITE_TRACE) != NULL) {
+	if (getenv(LIBCOWSQL_TRACE) != NULL) {
 		_dqliteTracingEnabled = enable;
 	}
 }

@@ -1,5 +1,5 @@
 AC_PREREQ(2.60)
-AC_INIT([libdqlite], [1.14.0], [https://github.com/canonical/dqlite])
+AC_INIT([libcowsql], [1.14.0], [https://github.com/cowsql/cowsql])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac])
 
@@ -94,5 +94,5 @@ CC_CHECK_FLAGS_APPEND([AM_CFLAGS],[CFLAGS],[ \
 #  -Wpedantic \
 AC_SUBST(AM_CFLAGS)
 
-AC_CONFIG_FILES([dqlite.pc Makefile])
+AC_CONFIG_FILES([cowsql.pc Makefile])
 AC_OUTPUT

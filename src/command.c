@@ -1,6 +1,6 @@
 #include <sqlite3.h>
 
-#include "../include/dqlite.h"
+#include "../include/cowsql.h"
 
 #include "lib/serialize.h"
 
@@ -31,7 +31,7 @@ static size_t frames__sizeof(const frames_t *frames)
 
 static void frames__encode(const frames_t *frames, void **cursor)
 {
-	const dqlite_vfs_frame *list;
+	const cowsql_vfs_frame *list;
 	unsigned i;
 	uint32__encode(&frames->n_pages, cursor);
 	uint16__encode(&frames->page_size, cursor);
@@ -78,7 +78,7 @@ COMMAND__TYPES(COMMAND__IMPLEMENT, );
 		buf->len += command_##LOWER##__sizeof(command); \
 		buf->base = raft_malloc(buf->len);              \
 		if (buf->base == NULL) {                        \
-			return DQLITE_NOMEM;                    \
+			return COWSQL_NOMEM;                    \
 		}                                               \
 		cursor = buf->base;                             \
 		header__encode(&h, &cursor);                    \
@@ -101,7 +101,7 @@ int command__encode(int type, const void *command, struct raft_buffer *buf)
 	case COMMAND_##UPPER:                                           \
 		*command = raft_malloc(sizeof(struct command_##LOWER)); \
 		if (*command == NULL) {                                 \
-			return DQLITE_NOMEM;                            \
+			return COWSQL_NOMEM;                            \
 		}                                                       \
 		rc = command_##LOWER##__decode(&cursor, *command);      \
 		break;
@@ -120,12 +120,12 @@ int command__decode(const struct raft_buffer *buf, int *type, void **command)
 		return rc;
 	}
 	if (h.format != FORMAT) {
-		return DQLITE_PROTO;
+		return COWSQL_PROTO;
 	}
 	switch (h.type) {
 		COMMAND__TYPES(DECODE, )
 		default:
-			rc = DQLITE_PROTO;
+			rc = COWSQL_PROTO;
 			break;
 	};
 	if (rc != 0) {
@@ -147,7 +147,7 @@ int command_frames__page_numbers(const struct command_frames *c,
 	*page_numbers =
 	    sqlite3_malloc64(sizeof **page_numbers * c->frames.n_pages);
 	if (*page_numbers == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	for (i = 0; i < c->frames.n_pages; i++) {

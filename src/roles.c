@@ -36,7 +36,7 @@
  * adjustment if a "tick" occurs while the queue of changes from the last
  * round is still nonempty.
  *
- * A handover is triggered when we call dqlite_node_handover on a node that's
+ * A handover is triggered when we call cowsql_node_handover on a node that's
  * the current cluster leader, or is a voter. Before shutting down for real,
  * the node in question tries to cause another node to become leader (using
  * raft_transfer), if applicable, and then promotes another node to voter
@@ -85,7 +85,7 @@ struct compare_data
 struct polling
 {
 	void (*cb)(struct polling *);
-	struct dqlite_node *node;
+	struct cowsql_node *node;
 	struct all_node_info *cluster;
 	unsigned *count;
 	unsigned n_cluster;
@@ -94,10 +94,10 @@ struct polling
 
 struct handover_voter_data
 {
-	struct dqlite_node *node;
-	dqlite_node_id target_id;
+	struct cowsql_node *node;
+	cowsql_node_id target_id;
 	char *leader_addr;
-	dqlite_node_id leader_id;
+	cowsql_node_id leader_id;
 };
 
 static int domainCount(uint64_t needle, const struct compare_data *data)
@@ -175,7 +175,7 @@ static int compareNodesForDemotion(const void *l, const void *r, void *p)
 static void changeCb(struct raft_change *change, int status);
 
 /* Take one role change record off the queue and apply it. */
-static void startChange(struct dqlite_node *d)
+static void startChange(struct cowsql_node *d)
 {
 	queue *head;
 	struct change_record *rec;
@@ -212,7 +212,7 @@ static void startChange(struct dqlite_node *d)
 /* When a role change has completed, start the next one. */
 static void changeCb(struct raft_change *change, int status)
 {
-	struct dqlite_node *d = change->data;
+	struct cowsql_node *d = change->data;
 
 	raft_free(change);
 	if (status != 0) {
@@ -223,7 +223,7 @@ static void changeCb(struct raft_change *change, int status)
 
 static void queueChange(uint64_t id, int role, void *arg)
 {
-	struct dqlite_node *d = arg;
+	struct cowsql_node *d = arg;
 	queue *head;
 	struct change_record *rec;
 
@@ -251,7 +251,7 @@ void RolesComputeChanges(int voters,
 			 int standbys,
 			 struct all_node_info *cluster,
 			 unsigned n_cluster,
-			 dqlite_node_id my_id,
+			 cowsql_node_id my_id,
 			 void (*cb)(uint64_t, int, void *),
 			 void *arg)
 {
@@ -264,15 +264,15 @@ void RolesComputeChanges(int voters,
 	/* Count (online) voters and standbys in the cluster, and demote any
 	 * offline nodes to spare. */
 	for (i = 0; i < n_cluster; i += 1) {
-		if (!cluster[i].online && cluster[i].role != DQLITE_SPARE) {
-			cb(cluster[i].id, DQLITE_SPARE, arg);
-			cluster[i].role = DQLITE_SPARE;
+		if (!cluster[i].online && cluster[i].role != COWSQL_SPARE) {
+			cb(cluster[i].id, COWSQL_SPARE, arg);
+			cluster[i].role = COWSQL_SPARE;
 		} else if (cluster[i].online &&
-			   cluster[i].role == DQLITE_VOTER) {
+			   cluster[i].role == COWSQL_VOTER) {
 			voter_count += 1;
 			addDomain(cluster[i].failure_domain, &voter_compare);
 		} else if (cluster[i].online &&
-			   cluster[i].role == DQLITE_STANDBY) {
+			   cluster[i].role == COWSQL_STANDBY) {
 			standby_count += 1;
 			addDomain(cluster[i].failure_domain, &standby_compare);
 		}
@@ -284,16 +284,16 @@ void RolesComputeChanges(int voters,
 			compareNodesForPromotion, &voter_compare);
 	}
 	for (i = 0; i < n_cluster && voter_count < voters; i += 1) {
-		if (!cluster[i].online || cluster[i].role == DQLITE_VOTER) {
+		if (!cluster[i].online || cluster[i].role == COWSQL_VOTER) {
 			continue;
 		}
-		cb(cluster[i].id, DQLITE_VOTER, arg);
-		if (cluster[i].role == DQLITE_STANDBY) {
+		cb(cluster[i].id, COWSQL_VOTER, arg);
+		if (cluster[i].role == COWSQL_STANDBY) {
 			standby_count -= 1;
 			removeDomain(cluster[i].failure_domain,
 				     &standby_compare);
 		}
-		cluster[i].role = DQLITE_VOTER;
+		cluster[i].role = COWSQL_VOTER;
 		voter_count += 1;
 		addDomain(cluster[i].failure_domain, &voter_compare);
 	}
@@ -308,11 +308,11 @@ void RolesComputeChanges(int voters,
 			compareNodesForDemotion, &voter_compare);
 	}
 	for (i = 0; i < n_cluster && voter_count > voters; i += 1) {
-		if (cluster[i].role != DQLITE_VOTER || cluster[i].id == my_id) {
+		if (cluster[i].role != COWSQL_VOTER || cluster[i].id == my_id) {
 			continue;
 		}
-		cb(cluster[i].id, DQLITE_SPARE, arg);
-		cluster[i].role = DQLITE_SPARE;
+		cb(cluster[i].id, COWSQL_SPARE, arg);
+		cluster[i].role = COWSQL_SPARE;
 		voter_count -= 1;
 		removeDomain(cluster[i].failure_domain, &voter_compare);
 	}
@@ -323,11 +323,11 @@ void RolesComputeChanges(int voters,
 			compareNodesForPromotion, &standby_compare);
 	}
 	for (i = 0; i < n_cluster && standby_count < standbys; i += 1) {
-		if (!cluster[i].online || cluster[i].role != DQLITE_SPARE) {
+		if (!cluster[i].online || cluster[i].role != COWSQL_SPARE) {
 			continue;
 		}
-		cb(cluster[i].id, DQLITE_STANDBY, arg);
-		cluster[i].role = DQLITE_STANDBY;
+		cb(cluster[i].id, COWSQL_STANDBY, arg);
+		cluster[i].role = COWSQL_STANDBY;
 		standby_count += 1;
 		addDomain(cluster[i].failure_domain, &standby_compare);
 	}
@@ -338,11 +338,11 @@ void RolesComputeChanges(int voters,
 			compareNodesForDemotion, &standby_compare);
 	}
 	for (i = 0; i < n_cluster && standby_count > standbys; i += 1) {
-		if (cluster[i].role != DQLITE_STANDBY) {
+		if (cluster[i].role != COWSQL_STANDBY) {
 			continue;
 		}
-		cb(cluster[i].id, DQLITE_SPARE, arg);
-		cluster[i].role = DQLITE_SPARE;
+		cb(cluster[i].id, COWSQL_SPARE, arg);
+		cluster[i].role = COWSQL_SPARE;
 		standby_count -= 1;
 		removeDomain(cluster[i].failure_domain, &standby_compare);
 	}
@@ -352,7 +352,7 @@ void RolesComputeChanges(int voters,
  * necessary role adjustments. This runs on the main thread. */
 static void adjustClusterCb(struct polling *polling)
 {
-	struct dqlite_node *d;
+	struct cowsql_node *d;
 	if (polling == NULL) {
 		return;
 	}
@@ -369,7 +369,7 @@ static void adjustClusterCb(struct polling *polling)
 static void pollClusterWorkCb(uv_work_t *work)
 {
 	struct polling *polling = work->data;
-	struct dqlite_node *d = polling->node;
+	struct cowsql_node *d = polling->node;
 	struct client_proto proto = {0};
 	struct client_context context;
 	int rv;
@@ -430,7 +430,7 @@ static void pollClusterAfterWorkCb(uv_work_t *work, int status)
 
 /* Poll every node in the cluster to learn whether it's online, and if so, its
  * weight and failure domain. */
-static void pollCluster(struct dqlite_node *d, void (*cb)(struct polling *))
+static void pollCluster(struct cowsql_node *d, void (*cb)(struct polling *))
 {
 	struct all_node_info *cluster;
 	const struct raft_server *server;
@@ -524,7 +524,7 @@ static void handoverVoterWorkCb(uv_work_t *work)
 	if (rv != 0) {
 		goto close;
 	}
-	rv = clientSendAssign(&proto, data->target_id, DQLITE_VOTER, &context);
+	rv = clientSendAssign(&proto, data->target_id, COWSQL_VOTER, &context);
 	if (rv != 0) {
 		goto close;
 	}
@@ -532,7 +532,7 @@ static void handoverVoterWorkCb(uv_work_t *work)
 	if (rv != 0) {
 		goto close;
 	}
-	rv = clientSendAssign(&proto, data->node->config.id, DQLITE_SPARE,
+	rv = clientSendAssign(&proto, data->node->config.id, COWSQL_SPARE,
 			      &context);
 	if (rv != 0) {
 		goto close;
@@ -546,12 +546,12 @@ close:
 static void handoverVoterAfterWorkCb(uv_work_t *work, int status)
 {
 	struct handover_voter_data *data = work->data;
-	struct dqlite_node *node = data->node;
+	struct cowsql_node *node = data->node;
 	int handover_status = 0;
-	void (*cb)(struct dqlite_node *, int);
+	void (*cb)(struct cowsql_node *, int);
 
 	if (status != 0) {
-		handover_status = DQLITE_ERROR;
+		handover_status = COWSQL_ERROR;
 	}
 	raft_free(data->leader_addr);
 	raft_free(data);
@@ -565,7 +565,7 @@ static void handoverVoterAfterWorkCb(uv_work_t *work, int status)
  * to promote in our place. */
 static void handoverVoterCb(struct polling *polling)
 {
-	struct dqlite_node *node;
+	struct cowsql_node *node;
 	raft_id leader_id;
 	const char *borrowed_addr;
 	char *leader_addr;
@@ -573,10 +573,10 @@ static void handoverVoterCb(struct polling *polling)
 	unsigned i;
 	struct all_node_info *cluster;
 	unsigned n_cluster;
-	dqlite_node_id target_id;
+	cowsql_node_id target_id;
 	struct handover_voter_data *data;
 	uv_work_t *work;
-	void (*cb)(struct dqlite_node *, int);
+	void (*cb)(struct cowsql_node *, int);
 	int rv;
 
 	if (polling == NULL) {
@@ -600,7 +600,7 @@ static void handoverVoterCb(struct polling *polling)
 	/* Select a non-voter to transfer to -- the logic is similar to
 	 * adjustClusterCb. */
 	for (i = 0; i < n_cluster; i += 1) {
-		if (cluster[i].online && cluster[i].role == DQLITE_VOTER &&
+		if (cluster[i].online && cluster[i].role == COWSQL_VOTER &&
 		    cluster[i].id != node->raft.id) {
 			addDomain(cluster[i].failure_domain, &voter_compare);
 		}
@@ -609,7 +609,7 @@ static void handoverVoterCb(struct polling *polling)
 		&voter_compare);
 	target_id = 0;
 	for (i = 0; i < n_cluster; i += 1) {
-		if (cluster[i].online && cluster[i].role != DQLITE_VOTER &&
+		if (cluster[i].online && cluster[i].role != COWSQL_VOTER &&
 		    cluster[i].id != node->raft.id) {
 			target_id = cluster[i].id;
 			break;
@@ -649,17 +649,17 @@ err_after_alloc_leader_addr:
 	raft_free(leader_addr);
 finish:
 	node->handover_done_cb = NULL;
-	cb(node, DQLITE_ERROR);
+	cb(node, COWSQL_ERROR);
 }
 
 static void handoverTransferCb(struct raft_transfer *req)
 {
-	struct dqlite_node *d = req->data;
+	struct cowsql_node *d = req->data;
 	raft_free(req);
 	pollCluster(d, handoverVoterCb);
 }
 
-void RolesAdjust(struct dqlite_node *d)
+void RolesAdjust(struct cowsql_node *d)
 {
 	/* Only the leader can assign roles. */
 	if (raft_state(&d->raft) != RAFT_LEADER) {
@@ -674,7 +674,7 @@ void RolesAdjust(struct dqlite_node *d)
 	pollCluster(d, adjustClusterCb);
 }
 
-void RolesHandover(struct dqlite_node *d, void (*cb)(struct dqlite_node *, int))
+void RolesHandover(struct cowsql_node *d, void (*cb)(struct cowsql_node *, int))
 {
 	struct raft_transfer *req;
 	int rv;
@@ -700,10 +700,10 @@ void RolesHandover(struct dqlite_node *d, void (*cb)(struct dqlite_node *, int))
 
 err:
 	d->handover_done_cb = NULL;
-	cb(d, DQLITE_ERROR);
+	cb(d, COWSQL_ERROR);
 }
 
-void RolesCancelPendingChanges(struct dqlite_node *d)
+void RolesCancelPendingChanges(struct cowsql_node *d)
 {
 	queue *head;
 	struct change_record *rec;

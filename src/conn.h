@@ -2,8 +2,8 @@
  * Handle a single client connection.
  */
 
-#ifndef DQLITE_CONN_H_
-#define DQLITE_CONN_H_
+#ifndef COWSQL_CONN_H_
+#define COWSQL_CONN_H_
 
 #include <raft/uv.h>
 
@@ -60,4 +60,4 @@ int conn__start(struct conn *c,
  */
 void conn__stop(struct conn *c);
 
-#endif /* DQLITE_CONN_H_ */
+#endif /* COWSQL_CONN_H_ */

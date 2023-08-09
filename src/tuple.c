@@ -81,7 +81,7 @@ int tuple_decoder__init(struct tuple_decoder *d,
 	header_size = calc_header_size(d->n, d->format);
 
 	if (header_size > cursor->cap) {
-		return DQLITE_PARSE;
+		return COWSQL_PARSE;
 	}
 
 	d->cursor = cursor;
@@ -140,14 +140,14 @@ int tuple_decoder__next(struct tuple_decoder *d, struct value *value)
 		case SQLITE_TEXT:
 			rc = text__decode(d->cursor, &value->text);
 			break;
-		case DQLITE_ISO8601:
+		case COWSQL_ISO8601:
 			rc = text__decode(d->cursor, &value->iso8601);
 			break;
-		case DQLITE_BOOLEAN:
+		case COWSQL_BOOLEAN:
 			rc = uint64__decode(d->cursor, &value->boolean);
 			break;
 		default:
-			rc = DQLITE_PARSE;
+			rc = COWSQL_PARSE;
 			break;
 	};
 	if (rc != 0) {
@@ -182,7 +182,7 @@ int tuple_encoder__init(struct tuple_encoder *e,
 		assert(n <= UINT8_MAX);
 		uint8_t *header = buffer__advance(buffer, 1);
 		if (header == NULL) {
-			return DQLITE_NOMEM;
+			return COWSQL_NOMEM;
 		}
 		header[0] = (uint8_t)n;
 	} else if (e->format == TUPLE__PARAMS32) {
@@ -190,7 +190,7 @@ int tuple_encoder__init(struct tuple_encoder *e,
 		assert((unsigned long long)val == (unsigned long long)n);
 		void *header = buffer__advance(buffer, 4);
 		if (header == NULL) {
-			return DQLITE_NOMEM;
+			return COWSQL_NOMEM;
 		}
 		uint32__encode(&val, &header);
 	}
@@ -204,7 +204,7 @@ int tuple_encoder__init(struct tuple_encoder *e,
 	/* Advance the buffer write pointer past the tuple header. */
 	cursor = buffer__advance(buffer, n_header);
 	if (cursor == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	return 0;
@@ -256,13 +256,13 @@ int tuple_encoder__next(struct tuple_encoder *e, struct value *value)
 		case SQLITE_TEXT:
 			size = text__sizeof(&value->text);
 			break;
-		case DQLITE_UNIXTIME:
+		case COWSQL_UNIXTIME:
 			size = int64__sizeof(&value->unixtime);
 			break;
-		case DQLITE_ISO8601:
+		case COWSQL_ISO8601:
 			size = text__sizeof(&value->iso8601);
 			break;
-		case DQLITE_BOOLEAN:
+		case COWSQL_BOOLEAN:
 			size = uint64__sizeof(&value->boolean);
 			break;
 		default:
@@ -272,7 +272,7 @@ int tuple_encoder__next(struct tuple_encoder *e, struct value *value)
 	/* Advance the buffer write pointer. */
 	cursor = buffer__advance(e->buffer, size);
 	if (cursor == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 
 	switch (value->type) {
@@ -292,13 +292,13 @@ int tuple_encoder__next(struct tuple_encoder *e, struct value *value)
 		case SQLITE_TEXT:
 			text__encode(&value->text, &cursor);
 			break;
-		case DQLITE_UNIXTIME:
+		case COWSQL_UNIXTIME:
 			int64__encode(&value->unixtime, &cursor);
 			break;
-		case DQLITE_ISO8601:
+		case COWSQL_ISO8601:
 			text__encode(&value->iso8601, &cursor);
 			break;
-		case DQLITE_BOOLEAN:
+		case COWSQL_BOOLEAN:
 			uint64__encode(&value->boolean, &cursor);
 			break;
 	};

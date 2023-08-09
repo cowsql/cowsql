@@ -4,7 +4,7 @@
 
 #include "buffer.h"
 
-#include "../../include/dqlite.h"
+#include "../../include/cowsql.h"
 
 /* How large is the buffer currently */
 #define SIZE(B) (B->n_pages * B->page_size)
@@ -18,7 +18,7 @@ int buffer__init(struct buffer *b)
 	b->n_pages = 1;
 	b->data = malloc(SIZE(b));
 	if (b->data == NULL) {
-		return DQLITE_NOMEM;
+		return COWSQL_NOMEM;
 	}
 	b->offset = 0;
 	return 0;

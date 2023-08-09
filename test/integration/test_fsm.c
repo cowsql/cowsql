@@ -746,7 +746,7 @@ TEST(fsm, snapshotRestoreMultipleDBs, setUp, tearDown, 0, snapshot_params)
 
 	/* Table after snapshot is not there on second DB */
 	PREPARE_FAIL("SELECT * from test2b", &stmt_id, &code, &msg);
-	munit_assert_uint64(code, ==, DQLITE_ERROR);
+	munit_assert_uint64(code, ==, COWSQL_ERROR);
 	munit_assert_string_equal(msg, "no such table: test2b");
 	free(msg);
 
@@ -819,7 +819,7 @@ TEST(fsm, applyUnknownTypeFail, setUp, tearDown, 0, NULL)
 
 	/* Apply the command and expect it to fail. */
 	rv = fsm->apply(fsm, &buf, &result);
-	munit_assert_int(rv, ==, DQLITE_PROTO);
+	munit_assert_int(rv, ==, COWSQL_PROTO);
 	munit_assert_ptr_null(result);
 
 	raft_free(buf.base);

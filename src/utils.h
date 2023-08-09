@@ -1,5 +1,5 @@
-#ifndef DQLITE_UTILS_H_
-#define DQLITE_UTILS_H_
+#ifndef COWSQL_UTILS_H_
+#define COWSQL_UTILS_H_
 
 #include <stdint.h>
 
@@ -13,4 +13,4 @@
 
 #define DBG() fprintf(stderr, "%s:%d\n", __func__, __LINE__)
 
-#endif /* DQLITE_UTILS_H_ */
+#endif /* COWSQL_UTILS_H_ */

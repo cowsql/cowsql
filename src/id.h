@@ -7,8 +7,8 @@
  * only.
  */
 
-#ifndef DQLITE_ID_H_
-#define DQLITE_ID_H_
+#ifndef COWSQL_ID_H_
+#define COWSQL_ID_H_
 
 #include <stdint.h>
 
@@ -43,4 +43,4 @@ uint64_t idExtract(const uint8_t buf[16]);
  */
 void idSet(uint8_t buf[16], uint64_t id);
 
-#endif /* DQLITE_ID_H_ */
+#endif /* COWSQL_ID_H_ */

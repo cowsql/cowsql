@@ -22,7 +22,7 @@ coverage/
 coverage.info
 unit-test
 integration-test
-dqlite.pc
+cowsql.pc
 libtool
 stamp-h*
 sqlite3.c

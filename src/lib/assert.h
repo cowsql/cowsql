@@ -5,10 +5,10 @@
 #ifndef LIB_ASSERT_H_
 #define LIB_ASSERT_H_
 
-#if defined(DQLITE_TEST)
+#if defined(COWSQL_TEST)
 #include "../../test/lib/munit.h"
 #define assert(expr) munit_assert(expr)
-#elif defined(DQLITE_ASSERT_WITH_BACKTRACE)
+#elif defined(COWSQL_ASSERT_WITH_BACKTRACE)
 #include <assert.h> /* for __assert_fail */
 #include <backtrace.h>
 #include <stdio.h>

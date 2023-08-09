@@ -1,5 +1,5 @@
-#ifndef DQLITE_TEST_HEAP_H
-#define DQLITE_TEST_HEAP_H
+#ifndef COWSQL_TEST_HEAP_H
+#define COWSQL_TEST_HEAP_H
 
 #include "munit.h"
 
@@ -29,4 +29,4 @@ void test_heap_fault_enable(void);
 #define SETUP_HEAP test_heap_setup(params, user_data);
 #define TEAR_DOWN_HEAP test_heap_tear_down(data);
 
-#endif /* DQLITE_TEST_HEAP_H */
+#endif /* COWSQL_TEST_HEAP_H */

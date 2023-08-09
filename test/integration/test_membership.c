@@ -98,7 +98,7 @@ TEST(membership, join, setUp, tearDown, 0, membership_params)
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
@@ -144,7 +144,7 @@ TEST(membership, transfer, setUp, tearDown, 0, membership_params)
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
@@ -193,7 +193,7 @@ TEST(membership,
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
@@ -256,7 +256,7 @@ TEST(membership, transferAndSqlExecWithBarrier, setUp, tearDown, 0, NULL)
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 
@@ -280,7 +280,7 @@ TEST(membership, transferAndSqlExecWithBarrier, setUp, tearDown, 0, NULL)
 	rv = clientSendExec(f->client, stmt_id, NULL, 0, NULL);
 	munit_assert_int(rv, ==, 0);
 	rv = clientRecvResult(f->client, &last_insert_id, &rows_affected, NULL);
-	munit_assert_int(rv, ==, DQLITE_CLIENT_PROTO_ERROR);
+	munit_assert_int(rv, ==, COWSQL_CLIENT_PROTO_ERROR);
 
 	test_server_client_close(&f->servers[1], &c_transfer);
 	return MUNIT_OK;
@@ -307,7 +307,7 @@ TEST(membership,
 
 	HANDSHAKE;
 	ADD(id, address);
-	ASSIGN(id, DQLITE_VOTER);
+	ASSIGN(id, COWSQL_VOTER);
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
 	EXEC(stmt_id, &last_insert_id, &rows_affected);
