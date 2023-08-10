@@ -1,6 +1,7 @@
 #include "server.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <sys/un.h>
 #include <time.h>
