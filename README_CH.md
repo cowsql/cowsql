@@ -1,7 +1,7 @@
 
 # cowsql 
 
-[![CI Tests](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/cowsql/cowsql/branch/master/graph/badge.svg)](https://codecov.io/gh/cowsql/cowsql)
+[![CI Tests](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/cowsql/cowsql/branch/main/graph/badge.svg)](https://codecov.io/gh/cowsql/cowsql)
 
 **注意**：中文文档有可能未及时更新，请以最新的英文[readme](./README.md)为准。
 

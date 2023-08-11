@@ -1,4 +1,4 @@
-cowsql [![CI Tests](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/cowsql/cowsql/branch/master/graph/badge.svg)](https://codecov.io/gh/cowsql/cowsql)
+cowsql [![CI Tests](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/cowsql/cowsql/branch/main/graph/badge.svg)](https://codecov.io/gh/cowsql/cowsql)
 ======
 
 [English](./README.md)|[简体中文](./README_CH.md)
