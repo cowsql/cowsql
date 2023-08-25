@@ -94,5 +94,5 @@ CC_CHECK_FLAGS_APPEND([AM_CFLAGS],[CFLAGS],[ \
 #  -Wpedantic \
 AC_SUBST(AM_CFLAGS)
 
-AC_CONFIG_FILES([cowsql.pc Makefile])
+AC_CONFIG_FILES([cowsql.pc cowsql.spec Makefile])
 AC_OUTPUT

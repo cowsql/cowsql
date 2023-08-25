@@ -1,0 +1,57 @@
+Name:           cowsql
+Epoch:          1
+Version:        @PACKAGE_VERSION@
+Release:        1
+Summary:        Distributed and embeddable SQL engine
+
+# from README.md
+License:        Slightly modified version of LGPLv3 with allowance for users to link statically
+URL:            https://cowsql.dev
+
+
+Source0:        https://github.com/cowsql/%{name}/archive/refs/tags/v%{version}.tar.gz
+
+Requires:       raft
+BuildRequires:  autoconf automake libtool gcc libuv-devel lz4-devel raft-devel sqlite-devel
+
+%description
+Cowsql is an embeddable, replicated and fault tolerant SQL engine.
+
+%package devel
+Summary:        Development libraries for cowsql
+Requires:       %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Provides:       %{name}-static
+
+%description devel
+Development libraries for cowsql
+
+%package_help
+
+
+%prep
+%autosetup -p1 -n %{name}-%{version}
+
+%build
+autoreconf -i
+%configure
+%make_build
+
+%install
+%make_install
+%delete_la
+
+%check
+%ldconfig_scriptlets
+
+%files
+%license LICENSE
+%{_libdir}/lib%{name}.so*
+
+%files devel
+%{_libdir}/lib%{name}.a
+%{_libdir}/pkgconfig/%{name}.pc
+%{_includedir}/cowsql.h
+
+%files help
+%doc README.md AUTHORS
+

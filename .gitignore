@@ -23,6 +23,7 @@ coverage.info
 unit-test
 integration-test
 cowsql.pc
+cowsql.spec
 libtool
 stamp-h*
 sqlite3.c
