@@ -127,8 +127,8 @@ int leader__init(struct leader *l, struct db *db, struct raft *raft)
 	int rc;
 	l->db = db;
 	l->raft = raft;
-	rc = openConnection(db->path, db->config->name, db->config->page_size,
-			    &l->conn);
+	rc = openConnection(db->filename, db->config->name,
+			    db->config->page_size, &l->conn);
 	if (rc != 0) {
 		tracef("open failed %d", rc);
 		return rc;
@@ -273,7 +273,7 @@ static void leaderApplyFramesCb(struct raft_apply *req,
 				l->exec->status = SQLITE_IOERR;
 				break;
 		}
-		VfsAbort(vfs, l->db->path);
+		VfsAbort(vfs, l->db->filename);
 	}
 
 	raft_free(apply);
@@ -360,14 +360,14 @@ static void leaderExecV2(struct exec *req)
 
 	req->status = sqlite3_step(req->stmt);
 
-	rv = VfsPoll(vfs, db->path, &frames, &n);
+	rv = VfsPoll(vfs, db->filename, &frames, &n);
 	if (rv != 0 || n == 0) {
 		tracef("vfs poll");
 		goto finish;
 	}
 
 	/* Check if the new frames would create an overfull database */
-	size = VfsDatabaseSize(vfs, db->path, n, db->config->page_size);
+	size = VfsDatabaseSize(vfs, db->filename, n, db->config->page_size);
 	if (size > VfsDatabaseSizeLimit(vfs)) {
 		rv = SQLITE_FULL;
 		goto abort;
@@ -389,7 +389,7 @@ abort:
 		sqlite3_free(frames[i].data);
 	}
 	sqlite3_free(frames);
-	VfsAbort(vfs, l->db->path);
+	VfsAbort(vfs, l->db->filename);
 finish:
 	if (rv != 0) {
 		tracef("exec v2 failed %d", rv);

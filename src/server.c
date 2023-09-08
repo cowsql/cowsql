@@ -13,7 +13,6 @@
 #include "id.h"
 #include "lib/addr.h"
 #include "lib/assert.h"
-#include "lib/fs.h"
 #include "logger.h"
 #include "protocol.h"
 #include "roles.h"
@@ -50,7 +49,7 @@ int cowsql__init(struct cowsql_node *d,
 		goto err;
 	}
 
-	rv = config__init(&d->config, id, address, db_dir_path);
+	rv = config__init(&d->config, id, address);
 	if (rv != 0) {
 		snprintf(d->errmsg, COWSQL_ERRMSG_BUF_SIZE,
 			 "config__init(rv:%d)", rv);
@@ -395,30 +394,6 @@ int cowsql_node_set_block_size(cowsql_node *n, size_t size)
 	}
 
 	raft_uv_set_block_size(&n->raft_io, size);
-	return 0;
-}
-int cowsql_node_enable_disk_mode(cowsql_node *n)
-{
-	int rv;
-
-	if (n->running) {
-		return COWSQL_MISUSE;
-	}
-
-	rv = cowsql_vfs_enable_disk(&n->vfs);
-	if (rv != 0) {
-		return rv;
-	}
-
-	n->registry.config->disk = true;
-
-	/* Close the default fsm and initialize the disk one. */
-	fsm__close(&n->raft_fsm);
-	rv = fsm__init_disk(&n->raft_fsm, &n->config, &n->registry);
-	if (rv != 0) {
-		return rv;
-	}
-
 	return 0;
 }
 
@@ -804,43 +779,12 @@ static bool taskReady(struct cowsql_node *d)
 	return d->running;
 }
 
-static int cowsqlDatabaseDirSetup(cowsql_node *t)
-{
-	int rv;
-	if (!t->config.disk) {
-		// nothing to do
-		return 0;
-	}
-
-	rv = FsEnsureDir(t->config.dir);
-	if (rv != 0) {
-		snprintf(t->errmsg, COWSQL_ERRMSG_BUF_SIZE,
-			 "Error creating database dir: %d", rv);
-		return rv;
-	}
-
-	rv = FsRemoveDirFiles(t->config.dir);
-	if (rv != 0) {
-		snprintf(t->errmsg, COWSQL_ERRMSG_BUF_SIZE,
-			 "Error removing files in database dir: %d", rv);
-		return rv;
-	}
-
-	return rv;
-}
-
 int cowsql_node_start(cowsql_node *t)
 {
 	int rv;
 	tracef("cowsql node start");
 
 	cowsqlTracingMaybeEnable(true);
-
-	rv = cowsqlDatabaseDirSetup(t);
-	if (rv != 0) {
-		tracef("database dir setup failed %s", t->errmsg);
-		goto err;
-	}
 
 	rv = maybeBootstrap(t, t->config.id, t->config.address);
 	if (rv != 0) {
