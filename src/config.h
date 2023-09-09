@@ -17,8 +17,6 @@ struct config
 	char name[256];                /* VFS/replication registriatio name */
 	unsigned long long failure_domain; /* User-provided failure domain */
 	unsigned long long int weight;     /* User-provided node weight */
-	char dir[1024];                    /* Data dir for on-disk database */
-	bool disk;                         /* Disk-mode or not */
 	int voters;                        /* Target number of voters */
 	int standbys;                      /* Target number of standbys */
 };
@@ -27,10 +25,7 @@ struct config
  * Initialize the config object with required values and set the rest to sane
  * defaults. A copy will be made of the given @address.
  */
-int config__init(struct config *c,
-		 cowsql_node_id id,
-		 const char *address,
-		 const char *dir);
+int config__init(struct config *c, cowsql_node_id id, const char *address);
 
 /**
  * Release any memory held by the config object.

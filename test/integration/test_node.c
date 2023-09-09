@@ -13,13 +13,6 @@
  *
  ******************************************************************************/
 
-static char *bools[] = {"0", "1", NULL};
-
-static MunitParameterEnum node_params[] = {
-    {"disk_mode", bools},
-    {NULL, NULL},
-};
-
 struct fixture
 {
 	char *dir;         /* Data directory. */
@@ -41,15 +34,6 @@ static void *setUp(const MunitParameter params[], void *user_data)
 	rv = cowsql_node_set_bind_address(f->node, "@123");
 	munit_assert_int(rv, ==, 0);
 
-	const char *disk_mode_param = munit_parameters_get(params, "disk_mode");
-	if (disk_mode_param != NULL) {
-		bool disk_mode = (bool)atoi(disk_mode_param);
-		if (disk_mode) {
-			rv = cowsql_node_enable_disk_mode(f->node);
-			munit_assert_int(rv, ==, 0);
-		}
-	}
-
 	return f;
 }
 
@@ -67,15 +51,6 @@ static void *setUpInet(const MunitParameter params[], void *user_data)
 
 	rv = cowsql_node_set_bind_address(f->node, "127.0.0.1:9001");
 	munit_assert_int(rv, ==, 0);
-
-	const char *disk_mode_param = munit_parameters_get(params, "disk_mode");
-	if (disk_mode_param != NULL) {
-		bool disk_mode = (bool)atoi(disk_mode_param);
-		if (disk_mode) {
-			rv = cowsql_node_enable_disk_mode(f->node);
-			munit_assert_int(rv, ==, 0);
-		}
-	}
 
 	return f;
 }
@@ -102,15 +77,6 @@ static void *setUpForRecovery(const MunitParameter params[], void *user_data)
 	rv = cowsql_node_set_bind_address(f->node, "@123");
 	munit_assert_int(rv, ==, 0);
 
-	const char *disk_mode_param = munit_parameters_get(params, "disk_mode");
-	if (disk_mode_param != NULL) {
-		bool disk_mode = (bool)atoi(disk_mode_param);
-		if (disk_mode) {
-			rv = cowsql_node_enable_disk_mode(f->node);
-			munit_assert_int(rv, ==, 0);
-		}
-	}
-
 	return f;
 }
 
@@ -134,7 +100,7 @@ SUITE(node);
  *
  ******************************************************************************/
 
-TEST(node, start, setUp, tearDown, 0, node_params)
+TEST(node, start, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -148,7 +114,7 @@ TEST(node, start, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, startInet, setUpInet, tearDown, 0, node_params)
+TEST(node, startInet, setUpInet, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -162,7 +128,7 @@ TEST(node, startInet, setUpInet, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, snapshotParams, setUp, tearDown, 0, node_params)
+TEST(node, snapshotParams, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -174,7 +140,7 @@ TEST(node, snapshotParams, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, snapshotParamsRunning, setUp, tearDown, 0, node_params)
+TEST(node, snapshotParamsRunning, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -191,7 +157,7 @@ TEST(node, snapshotParamsRunning, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, snapshotParamsTrailingTooSmall, setUp, tearDown, 0, node_params)
+TEST(node, snapshotParamsTrailingTooSmall, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -203,12 +169,7 @@ TEST(node, snapshotParamsTrailingTooSmall, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node,
-     snapshotParamsThresholdLargerThanTrailing,
-     setUp,
-     tearDown,
-     0,
-     node_params)
+TEST(node, snapshotParamsThresholdLargerThanTrailing, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -220,7 +181,7 @@ TEST(node,
 	return MUNIT_OK;
 }
 
-TEST(node, networkLatency, setUp, tearDown, 0, node_params)
+TEST(node, networkLatency, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -232,7 +193,7 @@ TEST(node, networkLatency, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, networkLatencyRunning, setUp, tearDown, 0, node_params)
+TEST(node, networkLatencyRunning, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -249,7 +210,7 @@ TEST(node, networkLatencyRunning, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, networkLatencyTooLarge, setUp, tearDown, 0, node_params)
+TEST(node, networkLatencyTooLarge, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -261,7 +222,7 @@ TEST(node, networkLatencyTooLarge, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, networkLatencyMs, setUp, tearDown, 0, node_params)
+TEST(node, networkLatencyMs, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -275,7 +236,7 @@ TEST(node, networkLatencyMs, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, networkLatencyMsRunning, setUp, tearDown, 0, node_params)
+TEST(node, networkLatencyMsRunning, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -292,7 +253,7 @@ TEST(node, networkLatencyMsRunning, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, networkLatencyMsTooSmall, setUp, tearDown, 0, node_params)
+TEST(node, networkLatencyMsTooSmall, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -304,7 +265,7 @@ TEST(node, networkLatencyMsTooSmall, setUp, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, networkLatencyMsTooLarge, setUp, tearDown, 0, node_params)
+TEST(node, networkLatencyMsTooLarge, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -358,7 +319,7 @@ TEST(node, blockSizeRunning, setUp, tearDown, 0, NULL)
  * cowsql_node_recover
  *
  ******************************************************************************/
-TEST(node, recover, setUpForRecovery, tearDown, 0, node_params)
+TEST(node, recover, setUpForRecovery, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -377,7 +338,7 @@ TEST(node, recover, setUpForRecovery, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, recoverExt, setUpForRecovery, tearDown, 0, node_params)
+TEST(node, recoverExt, setUpForRecovery, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -401,7 +362,7 @@ TEST(node, recoverExt, setUpForRecovery, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, recoverExtUnaligned, setUpForRecovery, tearDown, 0, node_params)
+TEST(node, recoverExtUnaligned, setUpForRecovery, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -420,7 +381,7 @@ TEST(node, recoverExtUnaligned, setUpForRecovery, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node, recoverExtTooSmall, setUpForRecovery, tearDown, 0, node_params)
+TEST(node, recoverExtTooSmall, setUpForRecovery, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -446,7 +407,7 @@ struct cowsql_node_info_ext_new
 	uint64_t new2;
 };
 
-TEST(node, recoverExtNewFields, setUpForRecovery, tearDown, 0, node_params)
+TEST(node, recoverExtNewFields, setUpForRecovery, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -468,12 +429,7 @@ TEST(node, recoverExtNewFields, setUpForRecovery, tearDown, 0, node_params)
 	return MUNIT_OK;
 }
 
-TEST(node,
-     recoverExtNewFieldsNotZero,
-     setUpForRecovery,
-     tearDown,
-     0,
-     node_params)
+TEST(node, recoverExtNewFieldsNotZero, setUpForRecovery, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;
@@ -507,7 +463,7 @@ TEST(node, errMsgNodeNull, NULL, NULL, 0, NULL)
 	return MUNIT_OK;
 }
 
-TEST(node, errMsg, setUp, tearDown, 0, node_params)
+TEST(node, errMsg, setUp, tearDown, 0, NULL)
 {
 	struct fixture *f = data;
 	int rv;

@@ -9,8 +9,6 @@
  * implementation. */
 int VfsInit(struct sqlite3_vfs *vfs, const char *name);
 
-int VfsEnableDisk(struct sqlite3_vfs *vfs);
-
 /* Release all memory associated with the given cowsql in-memory VFS
  * implementation.
  *
@@ -48,28 +46,11 @@ int VfsShallowSnapshot(sqlite3_vfs *vfs,
 		       struct cowsql_buffer bufs[],
 		       uint32_t n);
 
-/* Copies the WAL into buf */
-int VfsDiskSnapshotWal(sqlite3_vfs *vfs,
-		       const char *path,
-		       struct cowsql_buffer *buf);
-
-/* `mmap` the database into buf. */
-int VfsDiskSnapshotDb(sqlite3_vfs *vfs,
-		      const char *path,
-		      struct cowsql_buffer *buf);
-
 /* Restore a database snapshot. */
 int VfsRestore(sqlite3_vfs *vfs,
 	       const char *filename,
 	       const void *data,
 	       size_t n);
-
-/* Restore a disk database snapshot. */
-int VfsDiskRestore(sqlite3_vfs *vfs,
-		   const char *path,
-		   const void *data,
-		   size_t main_size,
-		   size_t wal_size);
 
 /* Number of pages in the database. */
 int VfsDatabaseNumPages(sqlite3_vfs *vfs, const char *filename, uint32_t *n);

@@ -19,7 +19,6 @@ static char *bools[] = {"0", "1", NULL};
 #define SNAPSHOT_SHALLOW_PARAM "snapshot-shallow-param"
 static MunitParameterEnum vfs_params[] = {
     {SNAPSHOT_SHALLOW_PARAM, bools},
-    {"disk_mode", bools},
     {NULL, NULL},
 };
 
@@ -27,7 +26,6 @@ struct fixture
 {
 	struct sqlite3_vfs vfs[N_VFS]; /* A "cluster" of VFS objects. */
 	char names[8][N_VFS];          /* Registration names */
-	char *dirs[N_VFS];             /* For the disk vfs. */
 };
 
 static void *setUp(const MunitParameter params[], void *user_data)
@@ -40,20 +38,9 @@ static void *setUp(const MunitParameter params[], void *user_data)
 	SETUP_SQLITE;
 
 	for (i = 0; i < N_VFS; i++) {
-		f->dirs[i] = NULL;
 		sprintf(f->names[i], "%u", i + 1);
 		rv = cowsql_vfs_init(&f->vfs[i], f->names[i]);
 		munit_assert_int(rv, ==, 0);
-		const char *disk_mode_param =
-		    munit_parameters_get(params, "disk_mode");
-		if (disk_mode_param != NULL) {
-			bool disk_mode = (bool)atoi(disk_mode_param);
-			if (disk_mode) {
-				f->dirs[i] = test_dir_setup();
-				rv = cowsql_vfs_enable_disk(&f->vfs[i]);
-				munit_assert_int(rv, ==, 0);
-			}
-		}
 		rv = sqlite3_vfs_register(&f->vfs[i], 0);
 		munit_assert_int(rv, ==, 0);
 	}
@@ -71,7 +58,6 @@ static void tearDown(void *data)
 		rv = sqlite3_vfs_unregister(&f->vfs[i]);
 		munit_assert_int(rv, ==, 0);
 		cowsql_vfs_close(&f->vfs[i]);
-		test_dir_tear_down(f->dirs[i]);
 	}
 
 	TEAR_DOWN_SQLITE;
@@ -97,32 +83,12 @@ static void tearDownRestorePendingByte(void *data)
 			     sqlite3_errmsg(DB), _rv);               \
 	}
 
-#define VFS_PATH_SZ 512
-static void vfsFillDbPath(struct fixture *f,
-			  char *vfs,
-			  char *filename,
-			  char *path)
-{
-	int rv;
-	char *dir = f->dirs[atoi(vfs) - 1];
-	if (dir != NULL) {
-		rv = snprintf(path, VFS_PATH_SZ, "%s/%s", dir, filename);
-	} else {
-		rv = snprintf(path, VFS_PATH_SZ, "%s", filename);
-	}
-	munit_assert_int(rv, >, 0);
-	munit_assert_int(rv, <, VFS_PATH_SZ);
-}
-
 /* Open a new database connection on the given VFS. */
 #define OPEN(VFS, DB)                                                         \
 	do {                                                                  \
 		int _flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;      \
 		int _rv;                                                      \
-		char path[VFS_PATH_SZ];                                       \
-		struct fixture *f = data;                                     \
-		vfsFillDbPath(f, VFS, "test.db", path);                       \
-		_rv = sqlite3_open_v2(path, &DB, _flags, VFS);                \
+		_rv = sqlite3_open_v2("test.db", &DB, _flags, VFS);           \
 		munit_assert_int(_rv, ==, SQLITE_OK);                         \
 		_rv = sqlite3_extended_result_codes(DB, 1);                   \
 		munit_assert_int(_rv, ==, SQLITE_OK);                         \
@@ -208,10 +174,7 @@ struct tx
 		unsigned _i;                                               \
 		int _rv;                                                   \
 		memset(&TX, 0, sizeof TX);                                 \
-		char path[VFS_PATH_SZ];                                    \
-		struct fixture *f = data;                                  \
-		vfsFillDbPath(f, VFS, "test.db", path);                    \
-		_rv = cowsql_vfs_poll(vfs, path, &_frames, &TX.n);         \
+		_rv = cowsql_vfs_poll(vfs, "test.db", &_frames, &TX.n);    \
 		munit_assert_int(_rv, ==, 0);                              \
 		if (_frames != NULL) {                                     \
 			TX.page_numbers =                                  \
@@ -229,16 +192,13 @@ struct tx
 	} while (0)
 
 /* Apply WAL frames to the given VFS. */
-#define APPLY(VFS, TX)                                                   \
-	do {                                                             \
-		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);                \
-		int _rv;                                                 \
-		char path[VFS_PATH_SZ];                                  \
-		struct fixture *f = data;                                \
-		vfsFillDbPath(f, VFS, "test.db", path);                  \
-		_rv = cowsql_vfs_apply(vfs, path, TX.n, TX.page_numbers, \
-				       TX.frames);                       \
-		munit_assert_int(_rv, ==, 0);                            \
+#define APPLY(VFS, TX)                                                        \
+	do {                                                                  \
+		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);                     \
+		int _rv;                                                      \
+		_rv = cowsql_vfs_apply(vfs, "test.db", TX.n, TX.page_numbers, \
+				       TX.frames);                            \
+		munit_assert_int(_rv, ==, 0);                                 \
 	} while (0)
 
 /* Abort a transaction on the given VFS. */
@@ -246,10 +206,7 @@ struct tx
 	do {                                              \
 		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS); \
 		int _rv;                                  \
-		char path[VFS_PATH_SZ];                   \
-		struct fixture *f = data;                 \
-		vfsFillDbPath(f, VFS, "test.db", path);   \
-		_rv = cowsql_vfs_abort(vfs, path);        \
+		_rv = cowsql_vfs_abort(vfs, "test.db");   \
 		munit_assert_int(_rv, ==, 0);             \
 	} while (0)
 
@@ -332,31 +289,6 @@ static struct cowsql_buffer n_bufs_to_buf(struct cowsql_buffer bufs[],
 	return buf;
 }
 
-#define SNAPSHOT_DISK(VFS, SNAPSHOT)                                  \
-	do {                                                          \
-		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);             \
-		int _rv;                                              \
-		unsigned _n;                                          \
-		struct cowsql_buffer *_bufs;                          \
-		struct cowsql_buffer _all_data;                       \
-		_n = 2;                                               \
-		_bufs = sqlite3_malloc64(_n * sizeof(*_bufs));        \
-		char path[VFS_PATH_SZ];                               \
-		struct fixture *f = data;                             \
-		vfsFillDbPath(f, VFS, "test.db", path);               \
-		_rv = cowsql_vfs_snapshot_disk(vfs, path, _bufs, _n); \
-		munit_assert_int(_rv, ==, 0);                         \
-		_all_data = n_bufs_to_buf(_bufs, _n);                 \
-		/* Free WAL buffer after copy. */                     \
-		SNAPSHOT.main_size = _bufs[0].len;                    \
-		SNAPSHOT.wal_size = _bufs[1].len;                     \
-		sqlite3_free(_bufs[1].base);                          \
-		munmap(_bufs[0].base, _bufs[0].len);                  \
-		sqlite3_free(_bufs);                                  \
-		SNAPSHOT.data = _all_data.base;                       \
-		SNAPSHOT.n = _all_data.len;                           \
-	} while (0)
-
 /* Take a snapshot of the database on the given VFS. */
 #define SNAPSHOT_DEEP(VFS, SNAPSHOT)                                      \
 	do {                                                              \
@@ -390,50 +322,29 @@ static struct cowsql_buffer n_bufs_to_buf(struct cowsql_buffer bufs[],
 		SNAPSHOT.n = _all_data.len;                                   \
 	} while (0)
 
-#define SNAPSHOT(VFS, SNAPSHOT)                                              \
-	do {                                                                 \
-		bool _shallow = false;                                       \
-		bool _disk_mode = false;                                     \
-		if (munit_parameters_get(params, SNAPSHOT_SHALLOW_PARAM) !=  \
-		    NULL) {                                                  \
-			_shallow = atoi(munit_parameters_get(                \
-			    params, SNAPSHOT_SHALLOW_PARAM));                \
-		}                                                            \
-		if (munit_parameters_get(params, "disk_mode") != NULL) {     \
-			_disk_mode =                                         \
-			    atoi(munit_parameters_get(params, "disk_mode")); \
-		}                                                            \
-		if (_shallow && !_disk_mode) {                               \
-			SNAPSHOT_SHALLOW(VFS, SNAPSHOT);                     \
-		} else if (!_shallow && !_disk_mode) {                       \
-			SNAPSHOT_DEEP(VFS, SNAPSHOT);                        \
-		} else {                                                     \
-			SNAPSHOT_DISK(VFS, SNAPSHOT);                        \
-		}                                                            \
+#define SNAPSHOT(VFS, SNAPSHOT)                                             \
+	do {                                                                \
+		bool _shallow = false;                                      \
+		if (munit_parameters_get(params, SNAPSHOT_SHALLOW_PARAM) != \
+		    NULL) {                                                 \
+			_shallow = atoi(munit_parameters_get(               \
+			    params, SNAPSHOT_SHALLOW_PARAM));               \
+		}                                                           \
+		if (_shallow) {                                             \
+			SNAPSHOT_SHALLOW(VFS, SNAPSHOT);                    \
+		} else {                                                    \
+			SNAPSHOT_DEEP(VFS, SNAPSHOT);                       \
+		}                                                           \
 	} while (0)
 
 /* Restore a snapshot onto the given VFS. */
-#define RESTORE(VFS, SNAPSHOT)                                               \
-	do {                                                                 \
-		bool _disk_mode = false;                                     \
-		if (munit_parameters_get(params, "disk_mode") != NULL) {     \
-			_disk_mode =                                         \
-			    atoi(munit_parameters_get(params, "disk_mode")); \
-		}                                                            \
-		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);                    \
-		int _rv;                                                     \
-		char path[VFS_PATH_SZ];                                      \
-		struct fixture *f = data;                                    \
-		vfsFillDbPath(f, VFS, "test.db", path);                      \
-		if (_disk_mode) {                                            \
-			_rv = cowsql_vfs_restore_disk(                       \
-			    vfs, path, SNAPSHOT.data, SNAPSHOT.main_size,    \
-			    SNAPSHOT.wal_size);                              \
-		} else {                                                     \
-			_rv = cowsql_vfs_restore(vfs, path, SNAPSHOT.data,   \
-						 SNAPSHOT.n);                \
-		}                                                            \
-		munit_assert_int(_rv, ==, 0);                                \
+#define RESTORE(VFS, SNAPSHOT)                                          \
+	do {                                                            \
+		sqlite3_vfs *vfs = sqlite3_vfs_find(VFS);               \
+		int _rv;                                                \
+		_rv = cowsql_vfs_restore(vfs, "test.db", SNAPSHOT.data, \
+					 SNAPSHOT.n);                   \
+		munit_assert_int(_rv, ==, 0);                           \
 	} while (0)
 
 /* Open and close a new connection using the cowsql VFS. */

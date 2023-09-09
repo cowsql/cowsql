@@ -399,16 +399,6 @@ COWSQL_API int cowsql_node_set_snapshot_params(cowsql_node *n,
 COWSQL_API int cowsql_node_set_block_size(cowsql_node *n, size_t size);
 
 /**
- * WARNING: This is an experimental API.
- *
- * By default cowsql holds the SQLite database file and WAL in memory. By
- * enabling disk-mode, cowsql will hold the SQLite database file on-disk while
- * keeping the WAL in memory. Has to be called after `cowsql_node_create` and
- * before `cowsql_node_start`.
- */
-COWSQL_API int cowsql_node_enable_disk_mode(cowsql_node *n);
-
-/**
  * Set the target number of voting nodes for the cluster.
  *
  * If automatic role management is enabled, the cluster leader will attempt to
@@ -587,8 +577,6 @@ COWSQL_API cowsql_node_id cowsql_generate_node_id(const char *address);
  */
 COWSQL_API int cowsql_vfs_init(sqlite3_vfs *vfs, const char *name);
 
-COWSQL_API int cowsql_vfs_enable_disk(sqlite3_vfs *vfs);
-
 /**
  * This function is DEPRECATED and will be removed in a future major release.
  *
@@ -688,14 +676,6 @@ COWSQL_API int cowsql_vfs_shallow_snapshot(sqlite3_vfs *vfs,
 
 /**
  * This function is DEPRECATED and will be removed in a future major release.
- */
-COWSQL_API int cowsql_vfs_snapshot_disk(sqlite3_vfs *vfs,
-					const char *filename,
-					struct cowsql_buffer bufs[],
-					unsigned n);
-
-/**
- * This function is DEPRECATED and will be removed in a future major release.
  *
  * Return the number of database pages (excluding WAL).
  */
@@ -713,14 +693,4 @@ COWSQL_API int cowsql_vfs_restore(sqlite3_vfs *vfs,
 				  const void *data,
 				  size_t n);
 
-/**
- * This function is DEPRECATED and will be removed in a future major release.
- *
- * Restore a snapshot of the main database file and of the WAL file.
- */
-COWSQL_API int cowsql_vfs_restore_disk(sqlite3_vfs *vfs,
-				       const char *filename,
-				       const void *data,
-				       size_t main_size,
-				       size_t wal_size);
 #endif /* COWSQL_H */
