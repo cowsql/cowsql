@@ -1,4 +1,4 @@
-cowsql [![Tests](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/cowsql/cowsql/branch/main/graph/badge.svg)](https://codecov.io/gh/cowsql/cowsql) [![Documentation Status](https://readthedocs.org/projects/raft/badge/?version=latest)](https://raft.readthedocs.io/en/latest/?badge=latest) [![Documentation Status](https://readthedocs.org/projects/cowsql/badge/?version=latest)](https://cowsql.dev)
+cowsql [![Tests](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/cowsql/cowsql/actions/workflows/build-and-test.yml) [![codecov](https://codecov.io/gh/cowsql/cowsql/branch/main/graph/badge.svg)](https://codecov.io/gh/cowsql/cowsql) [![Documentation Status](https://readthedocs.org/projects/cowsql/badge/?version=latest)](https://cowsql.dev)
 ======
 
 [English](./README.md)|[简体中文](./README_CH.md)
