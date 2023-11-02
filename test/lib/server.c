@@ -70,7 +70,7 @@ void test_server_start(struct test_server *s, const MunitParameter params[])
 	rv = cowsql_node_set_connect_func(s->cowsql, endpointConnect, s);
 	munit_assert_int(rv, ==, 0);
 
-	rv = cowsql_node_set_network_latency_ms(s->cowsql, 20);
+	rv = cowsql_node_set_network_latency_ms(s->cowsql, 30);
 	munit_assert_int(rv, ==, 0);
 
 	const char *snapshot_threshold_param =
