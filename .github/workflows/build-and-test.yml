@@ -6,18 +6,7 @@ on:
 
 jobs:
   build-and-test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-20.04
-          - ubuntu-22.04
-        compiler:
-          - gcc
-          - clang
-        tracing:
-          - LIBCOWSQL_TRACE=1
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v4
@@ -27,8 +16,6 @@ jobs:
           sudo apt install -y lcov libsqlite3-dev liblz4-dev libuv1-dev
 
     - name: Build raft
-      env:
-        CC: ${{ matrix.compiler }}
       run: |
           git clone https://github.com/cowsql/raft.git --depth 1
           cd raft
@@ -40,24 +27,17 @@ jobs:
           cd ..
 
     - name: Build cowsql
-      env:
-        CC: ${{ matrix.compiler }}
       run: |
           autoreconf -i
           ./configure --enable-debug --enable-code-coverage --enable-sanitize
           make CFLAGS=-O0 -j2
 
     - name: Test
-      env:
-        CC: ${{ matrix.compiler }}
       run: |
-           export ${{ matrix.tracing }}
            make CFLAGS=-O0 -j2 check || (cat ./test-suite.log && false)
 
     - name: Coverage
-      env:
-        CC: ${{ matrix.compiler }}
-      run: if [ "${CC}" = "gcc" ]; then make code-coverage-capture; fi
+      run: make code-coverage-capture
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
