@@ -29,6 +29,8 @@
 
 #define NODE_STORE_INFO_FORMAT_V1 "v1"
 
+static void monitor_cb(struct raft *r);
+
 int cowsql__init(struct cowsql_node *d,
 		 cowsql_node_id id,
 		 const char *address,
@@ -92,6 +94,9 @@ int cowsql__init(struct cowsql_node *d,
 			 raft_errmsg(&d->raft));
 		return COWSQL_ERROR;
 	}
+
+	d->raft.legacy.step_cb = monitor_cb;
+
 	/* TODO: expose these values through some API */
 	raft_set_election_timeout(&d->raft, 3000);
 	raft_set_heartbeat_timeout(&d->raft, 500);
@@ -615,9 +620,9 @@ err:
 	uv_close((struct uv_handle_s *)stream, (uv_close_cb)raft_free);
 }
 
-static void monitor_cb(uv_prepare_t *monitor)
+static void monitor_cb(struct raft *r)
 {
-	struct cowsql_node *d = monitor->data;
+	struct cowsql_node *d = r->data;
 	int state = raft_state(&d->raft);
 	queue *head;
 	struct conn *conn;
@@ -680,8 +685,6 @@ static int taskRun(struct cowsql_node *d)
 	/* Schedule raft state change monitor. */
 	d->monitor.data = d;
 	rv = uv_prepare_init(&d->loop, &d->monitor);
-	assert(rv == 0);
-	rv = uv_prepare_start(&d->monitor, monitor_cb);
 	assert(rv == 0);
 
 	/* Schedule the role management callback. */
