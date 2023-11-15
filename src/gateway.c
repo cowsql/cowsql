@@ -43,6 +43,7 @@ void gateway__leader_close(struct gateway *g, int reason)
 	if (g->req != NULL) {
 		if (g->leader->inflight != NULL) {
 			tracef("finish inflight apply request");
+			g->leader->inflight->canceled = true;
 			struct raft_apply *req = &g->leader->inflight->req;
 			req->cb(req, reason, NULL);
 			assert(g->req == NULL);
