@@ -238,7 +238,7 @@ static void leaderApplyFramesCb(struct raft_apply *req,
 	tracef("apply frames cb id:%" PRIu64, idExtract(req->req_id));
 	struct apply *apply = req->data;
 	struct leader *l = apply->leader;
-	if (l == NULL) {
+	if (l == NULL || apply->fired) {
 		raft_free(apply);
 		return;
 	}
@@ -276,7 +276,13 @@ static void leaderApplyFramesCb(struct raft_apply *req,
 		VfsAbort(vfs, l->db->filename);
 	}
 
-	raft_free(apply);
+	apply->fired = true;
+
+	/* Don't free the request object if we're being canceled by
+	 * gateway__leader_close, as raft will call this callback again. */
+	if (!apply->canceled) {
+		raft_free(apply);
+	}
 
 	if (status == 0) {
 		leaderMaybeCheckpointLegacy(l);
@@ -324,6 +330,8 @@ static int leaderApplyFrames(struct exec *req,
 	apply->leader = req->leader;
 	apply->req.data = apply;
 	apply->type = COMMAND_FRAMES;
+	apply->canceled = false;
+	apply->fired = false;
 	idSet(apply->req.req_id, req->id);
 
 	rv = raft_apply(l->raft, &apply->req, &buf, 1, leaderApplyFramesCb);

@@ -29,12 +29,8 @@ struct apply
 	int status;            /* Raft apply result */
 	struct leader *leader; /* Leader connection that triggered the hook */
 	int type;              /* Command type */
-	union {                /* Command-specific data */
-		struct
-		{
-			bool is_commit;
-		} frames;
-	};
+	bool canceled;         /* Request canceled by gateway__leader_close */
+	bool fired;            /* True if the req callback was fired. */
 };
 
 struct leader
