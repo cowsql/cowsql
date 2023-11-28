@@ -5,9 +5,16 @@
 
 **注意**：中文文档有可能未及时更新，请以最新的英文[readme](./README.md)为准。
 
-[cowsql](https://cowsql.io)是一个用C语言开发的可嵌入的，支持流复制的数据库引擎，具备高可用性和自动故障转移功能。
+[cowsql](https://cowsql.dev) (/ˈkaʊ,siːkwəl/
+[listen](http://ipa-reader.xyz/?text=%CB%88ka%CA%8A%2Csi%CB%90kw%C9%99l)) 是一个用C语言开发的可嵌入的，支持流复制的数据库引擎，具备高可用性和自动故障转移功能。
 
-“cowsql”是“distributed SQLite”的简写，即分布式SQLite。意味着cowsql通过网络协议扩展SQLite，将应用程序的各个实例连接在一起，让它们作为一个高可用的集群，而不依赖外部数据库。
+cowsql通过网络协议扩展[SQLite](https://sqlite.org/)，将应用程序的各个实例连接在一起，让它们作为一个高可用的集群，而不依赖外部数据库。
+
+"cowsql"名字大致取意["宠物与牲口应用思辨"](https://iamondemand.com/blog/devops-concepts-pets-vs-cattle/)，删除或重建一个存储使用cowsql应用的特定节点，应用基本使用不受影响。
+
+## Canonical dqlite 分支
+
+cowsql 是Canonical [dqlite](https://github.com/canonical/dqlite)项目一个分支，dqlite原先也是cowsql作者[自己](https://github.com/canonical/dqlite/commits?author=freeekanayaka)当时在Canonical工作时候开发的。
 
 ## 设计亮点
 
