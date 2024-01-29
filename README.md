@@ -79,7 +79,7 @@ If you are on a Debian-based system, you can get the latest development release 
 cowsql's [dev PPA](https://launchpad.net/~cowsql/+archive/ubuntu/master):
 
 ```
-sudo add-apt-repository ppa:cowsql/master
+sudo add-apt-repository ppa:cowsql/main
 sudo apt-get update
 sudo apt-get install libcowsql-dev
 ```
