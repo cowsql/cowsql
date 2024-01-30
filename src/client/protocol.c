@@ -139,8 +139,10 @@ static ssize_t doRead(int fd,
 		assert(rv == 0);
 		if (context != NULL) {
 			millis =
-			    (long)((context->deadline.tv_sec - now.tv_sec) * 1000 +
-			    (context->deadline.tv_nsec - now.tv_nsec) / 1000000);
+			    (long)((context->deadline.tv_sec - now.tv_sec) *
+				       1000 +
+				   (context->deadline.tv_nsec - now.tv_nsec) /
+				       1000000);
 			if (millis < 0) {
 				/* poll(2) will block indefinitely if the
 				 * timeout argument is negative, and we don't
@@ -219,8 +221,10 @@ static ssize_t doWrite(int fd,
 		assert(rv == 0);
 		if (context != NULL) {
 			millis =
-			    (long)((context->deadline.tv_sec - now.tv_sec) * 1000 +
-			    (context->deadline.tv_nsec - now.tv_nsec) / 1000000);
+			    (long)((context->deadline.tv_sec - now.tv_sec) *
+				       1000 +
+				   (context->deadline.tv_nsec - now.tv_nsec) /
+				       1000000);
 			if (millis < 0) {
 				/* poll(2) will block indefinitely if the
 				 * timeout argument is negative, and we don't
