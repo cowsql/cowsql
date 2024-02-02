@@ -336,6 +336,9 @@ static int leaderApplyFrames(struct exec *req,
 
 	rv = raft_apply(l->raft, &apply->req, &buf, 1, leaderApplyFramesCb);
 	if (rv != 0) {
+		if (rv == RAFT_NOSPACE) {
+			rv = SQLITE_IOERR_WRITE;
+		}
 		tracef("raft apply failed %d", rv);
 		goto err_after_command_encode;
 	}
