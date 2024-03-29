@@ -82,30 +82,34 @@ void test_server_start(struct test_server *s, const MunitParameter params[])
 		munit_assert_int(rv, ==, 0);
 	}
 
-	const char *target_voters_param =
-	    munit_parameters_get(params, "target_voters");
-	if (target_voters_param != NULL) {
-		int n = atoi(target_voters_param);
-		rv = cowsql_node_set_target_voters(s->cowsql, n);
-		munit_assert_int(rv, ==, 0);
-	}
-
-	const char *target_standbys_param =
-	    munit_parameters_get(params, "target_standbys");
-	if (target_standbys_param != NULL) {
-		int n = atoi(target_standbys_param);
-		rv = cowsql_node_set_target_standbys(s->cowsql, n);
-		munit_assert_int(rv, ==, 0);
-	}
-
-	const char *role_management_param =
-	    munit_parameters_get(params, "role_management");
-	if (role_management_param != NULL) {
-		bool role_management = (bool)atoi(role_management_param);
-		s->role_management = role_management;
-		if (role_management) {
-			rv = cowsql_node_enable_role_management(s->cowsql);
+	if (getenv("CI") != NULL) {
+		const char *target_voters_param =
+		    munit_parameters_get(params, "target_voters");
+		if (target_voters_param != NULL) {
+			int n = atoi(target_voters_param);
+			rv = cowsql_node_set_target_voters(s->cowsql, n);
 			munit_assert_int(rv, ==, 0);
+		}
+
+		const char *target_standbys_param =
+		    munit_parameters_get(params, "target_standbys");
+		if (target_standbys_param != NULL) {
+			int n = atoi(target_standbys_param);
+			rv = cowsql_node_set_target_standbys(s->cowsql, n);
+			munit_assert_int(rv, ==, 0);
+		}
+
+		const char *role_management_param =
+		    munit_parameters_get(params, "role_management");
+		if (role_management_param != NULL) {
+			bool role_management =
+			    (bool)atoi(role_management_param);
+			s->role_management = role_management;
+			if (role_management) {
+				rv = cowsql_node_enable_role_management(
+				    s->cowsql);
+				munit_assert_int(rv, ==, 0);
+			}
 		}
 	}
 
