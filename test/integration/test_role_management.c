@@ -110,6 +110,11 @@ TEST(role_management, promote, setUp, tearDown, 0, role_management_params)
 	const char *address = "@2";
 	int tries;
 
+	/* TODO: this test is time-dependant and flaky on some platforms */
+	if (getenv("CI") == NULL) {
+		return MUNIT_SKIP;
+	}
+
 	HANDSHAKE;
 
 	id = 2;
