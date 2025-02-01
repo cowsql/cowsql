@@ -1,5 +1,5 @@
 AC_PREREQ(2.60)
-AC_INIT([libcowsql], [1.15.6], [https://github.com/cowsql/cowsql])
+AC_INIT([libcowsql], [1.15.7], [https://github.com/cowsql/cowsql])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac])
 
