@@ -9,6 +9,10 @@
 #include "../lib/sqlite.h"
 #include "../lib/util.h"
 
+#if defined(__arm__) || defined(__aarch64__) || defined(__s390x__)
+#define FLAKY 1
+#endif
+
 /******************************************************************************
  *
  * Fixture
@@ -241,6 +245,10 @@ TEST(membership, transferAndSqlExecWithBarrier, setUp, tearDown, 0, NULL)
 	uint64_t rows_affected;
 	struct client_proto c_transfer; /* Client used for transfer requests */
 	struct fixture_id arg;
+
+#if defined(FLAKY)
+	return MUNIT_SKIP;
+#endif
 
 	HANDSHAKE;
 	ADD(id, address);

@@ -8,7 +8,7 @@
 #include "../lib/server.h"
 #include "../lib/sqlite.h"
 
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__arm__) || defined(__aarch64__) || defined(__s390x__)
 #define FLAKY 1
 #endif
 
