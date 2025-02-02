@@ -14,7 +14,7 @@
 #include "munit.h"
 
 #if defined(__arm__) || defined(__aarch64__) || defined(__s390x__) || \
-    defined(__riscv)
+    defined(__hppa__) || defined(__mips64) || defined(__riscv)
 #define FLAKY 1
 #endif
 

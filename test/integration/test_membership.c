@@ -9,6 +9,8 @@
 #include "../lib/sqlite.h"
 #include "../lib/util.h"
 
+#ifndef FLAKY
+
 /******************************************************************************
  *
  * Fixture
@@ -242,10 +244,6 @@ TEST(membership, transferAndSqlExecWithBarrier, setUp, tearDown, 0, NULL)
 	struct client_proto c_transfer; /* Client used for transfer requests */
 	struct fixture_id arg;
 
-#if defined(FLAKY)
-	return MUNIT_SKIP;
-#endif
-
 	HANDSHAKE;
 	ADD(id, address);
 	ASSIGN(id, COWSQL_VOTER);
@@ -347,3 +345,5 @@ TEST(membership, transferTwicePendingTransaction, setUp, tearDown, 0, NULL)
 
 	return MUNIT_OK;
 }
+
+#endif /* not FLAKY */

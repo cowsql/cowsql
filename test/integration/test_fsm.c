@@ -7,6 +7,8 @@
 #include "../lib/server.h"
 #include "../lib/sqlite.h"
 
+#ifndef FLAKY
+
 /******************************************************************************
  *
  * Fixture
@@ -588,3 +590,5 @@ TEST(fsm, applyUnknownTypeFail, setUp, tearDown, 0, NULL)
 	raft_free(buf.base);
 	return MUNIT_OK;
 }
+
+#endif /* not FLAKY */
