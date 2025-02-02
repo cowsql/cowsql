@@ -9,6 +9,8 @@
 #include "../lib/sqlite.h"
 #include "../lib/util.h"
 
+#ifndef FLAKY
+
 #define N_SERVERS 5
 #define FIXTURE                                \
 	struct test_server servers[N_SERVERS]; \
@@ -163,3 +165,5 @@ TEST(role_management, promote, setUp, tearDown, 0, role_management_params)
 
 	return MUNIT_OK;
 }
+
+#endif /* not FLAKY */

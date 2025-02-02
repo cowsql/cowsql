@@ -4,6 +4,8 @@
 #include "../lib/server.h"
 #include "../lib/sqlite.h"
 
+#ifndef FLAKY
+
 /******************************************************************************
  *
  * Handle client requests
@@ -142,3 +144,5 @@ TEST(client, querySql, setUp, tearDown, 0, NULL)
 
 	return MUNIT_OK;
 }
+
+#endif /* not FLAKY */

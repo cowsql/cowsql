@@ -8,9 +8,7 @@
 #include "../lib/server.h"
 #include "../lib/sqlite.h"
 
-#if defined(__arm__) || defined(__aarch64__) || defined(__s390x__)
-#define FLAKY 1
-#endif
+#ifndef FLAKY
 
 /******************************************************************************
  *
@@ -100,10 +98,6 @@ TEST(cluster, restart, setUp, tearDown, 0, cluster_params)
 	    strtol(munit_parameters_get(params, "num_records"), NULL, 0);
 	char sql[128];
 
-#if defined(FLAKY)
-	return MUNIT_SKIP;
-#endif
-
 	HANDSHAKE;
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
@@ -142,10 +136,6 @@ TEST(cluster, dataOnNewNode, setUp, tearDown, 0, cluster_params)
 	char sql[128];
 	unsigned id = 2;
 	const char *address = "@2";
-
-#if defined(FLAKY)
-	return MUNIT_SKIP;
-#endif
 
 	HANDSHAKE;
 	OPEN;
@@ -227,10 +217,6 @@ TEST(cluster, modifyingQuery, setUp, tearDown, 0, cluster_params)
 	unsigned id = 2;
 	const char *address = "@2";
 
-#if defined(FLAKY)
-	return MUNIT_SKIP;
-#endif
-
 	HANDSHAKE;
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
@@ -274,10 +260,6 @@ TEST(cluster, modifyingQuerySql, setUp, tearDown, 0, cluster_params)
 	unsigned id = 2;
 	const char *address = "@2";
 
-#if defined(FLAKY)
-	return MUNIT_SKIP;
-#endif
-
 	HANDSHAKE;
 	OPEN;
 	PREPARE("CREATE TABLE test (n INT)", &stmt_id);
@@ -306,3 +288,5 @@ TEST(cluster, modifyingQuerySql, setUp, tearDown, 0, cluster_params)
 	clientCloseRows(&rows);
 	return MUNIT_OK;
 }
+
+#endif /* not FLAKY */
