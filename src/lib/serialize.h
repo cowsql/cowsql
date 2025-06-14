@@ -37,7 +37,7 @@ static_assert(sizeof(double) == sizeof(uint64_t),
  * Basic type aliases to used by macro-based processing.
  */
 typedef const char *text_t;
-typedef double float_t;
+typedef double cowsql_float;
 typedef uv_buf_t blob_t;
 
 /**
@@ -143,7 +143,7 @@ COWSQL_INLINE size_t int64__sizeof(const int64_t *value)
 	return sizeof(int64_t);
 }
 
-COWSQL_INLINE size_t float__sizeof(const float_t *value)
+COWSQL_INLINE size_t float__sizeof(const cowsql_float *value)
 {
 	(void)value;
 	return sizeof(double);
@@ -190,7 +190,7 @@ COWSQL_INLINE void int64__encode(const int64_t *value, void **cursor)
 	*cursor += sizeof(int64_t);
 }
 
-COWSQL_INLINE void float__encode(const float_t *value, void **cursor)
+COWSQL_INLINE void float__encode(const cowsql_float *value, void **cursor)
 {
 	*(uint64_t *)(*cursor) = ByteFlipLe64(*(uint64_t *)value);
 	*cursor += sizeof(uint64_t);
@@ -273,7 +273,7 @@ COWSQL_INLINE int int64__decode(struct cursor *cursor, int64_t *value)
 	return 0;
 }
 
-COWSQL_INLINE int float__decode(struct cursor *cursor, float_t *value)
+COWSQL_INLINE int float__decode(struct cursor *cursor, cowsql_float *value)
 {
 	size_t n = sizeof(double);
 	if (n > cursor->cap) {
