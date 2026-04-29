@@ -987,10 +987,10 @@ static const struct client_node_info *findNodeInCache(
  * representation. */
 static int parseNodeStore(char *buf, size_t len, struct node_store_cache *cache)
 {
-	const char *p = buf;
+	char *p = buf;
 	const char *end = buf + len;
 	char *nl;
-	const char *version_str;
+	char *version_str;
 	const char *addr;
 	const char *id_str;
 	const char *dig;
@@ -1126,12 +1126,12 @@ static int parseLocalInfo(char *buf,
 			  char **local_addr,
 			  uint64_t *local_id)
 {
-	const char *p = buf;
+	char *p = buf;
 	const char *end = buf + len;
 	char *nl;
-	const char *version_str;
-	const char *addr;
-	const char *id_str;
+	char *version_str;
+	char *addr;
+	char *id_str;
 	const char *dig;
 	unsigned long long id;
 
